@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.vite/
+*.log
+.DS_Store
+
+# generated models / slicer output
+/out/
+*.stl
+*.3mf
+*.gcode
+
+# local reference files (third-party, license unknown — never commit)
+/reference/
