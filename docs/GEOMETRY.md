@@ -38,6 +38,8 @@ All values are in mm. Sources disagree in places, so the derivations below are w
 
 ## 3. Print orientation
 
+> **Superseded (2026-11-10).** Bricko now prints on its side only, like the original (see PLAN.md › Rework). The comparison below is kept for the record.
+
 | | `flat` (default) | `side` (the original's) |
 |---|---|---|
 | Setup | Base bottom on the bed, clip closed, studs up | Hinge axis vertical, profile lying in XY |

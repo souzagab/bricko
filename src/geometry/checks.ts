@@ -40,7 +40,7 @@ export function checkClip(K: ManifoldToplevel, S: Scope, d: Derived, base: Manif
   const overlapVolume = t(K.Manifold.intersection(base, arm)).volume();
   if (overlapVolume > 1e-4) failures.push(`base and arm overlap (${overlapVolume.toFixed(4)} mm³)`);
 
-  const requiredGap = Math.min(d.c, d.ga, d.gz) - 1e-3;
+  const requiredGap = Math.min(d.c, d.gzL) - 3e-3; // µm-level: first-layer prism overlap, polygonised curves
   const minGap = base.minGap(arm, 2);
   if (minGap < requiredGap) failures.push(`min gap ${minGap.toFixed(3)} < ${requiredGap.toFixed(3)} mm`);
 

@@ -10,8 +10,8 @@ A browser tool for making **print-in-place, brick-compatible cable clips** to yo
 npm install
 npm test                                   # invariants, kinematics, fuzzing
 node cli/gen.ts -o clip.stl                # default clip
-node cli/gen.ts --preset usbc -o usbc.stl  # presets: default usbc power hdmi bundle slim mixed side
-node cli/gen.ts --set channelCount=3 --set channelWidth=7 --set radialClearance=0.4 -o mine.stl
+node cli/gen.ts --preset usbc -o usbc.stl  # presets: default usbc power hdmi bundle slim mixed snap original
+node cli/gen.ts --set channelCount=3 --set channelWidth=7 --set clearance=0.3 -o mine.stl
 node cli/gen.ts --all-presets -o out/
 ```
 
@@ -22,6 +22,7 @@ Requires Node ≥ 23.6, which runs TypeScript directly.
 | [docs/PLAN.md](docs/PLAN.md) | Decisions, architecture, parameter set, validation rules, tests and milestones |
 | [docs/GEOMETRY.md](docs/GEOMETRY.md) | Brick dimensions (with derivations), FDM design rules, print orientation and a teardown of the original clip |
 | [docs/RESEARCH.md](docs/RESEARCH.md) | Research findings, with sources |
+| [docs/ORIGINAL-TEARDOWN.md](docs/ORIGINAL-TEARDOWN.md) | Reverse-engineered mechanism and dimensions of the original clip |
 
 ## License
 

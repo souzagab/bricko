@@ -21,7 +21,7 @@ Out of scope for v1: accounts, a backend, MakerWorld or any printer-vendor integ
 | D7 | **One parameter schema** (zod 4) drives the UI controls, validation, defaults, URL sharing and presets. | Single source of truth, so adding a parameter means one edit. |
 | D8 | **Geometry runs in a Web Worker.** | The UI never freezes while a model rebuilds. |
 | D9 | **Output is one binary STL** holding both bodies (base and arm), already placed on the bed in print orientation. 3MF comes later via `fflate`. | Every slicer opens STL. The original STL was not on the bed (it was centred on Z=0). |
-| D10 | **Print orientation is a parameter: `flat` (default) or `side`.** The geometry rules satisfy both. | Studs need to print **upright** to clutch real bricks well, so flat wins. `side` is the original's orientation and gives the best hinge and snaps, but prints the studs sideways. See GEOMETRY.md §3. |
+| D10 | ~~Print orientation is a parameter: flat (default) or side.~~ **Superseded: prints on its side only, like the original** (decided after the teardown). | The original's whole design (hook latch, mushroom keys, sideways-printed studs) depends on printing on its side, and that design is proven. |
 | D11 | **Brick dimensions use nominal values plus one "fit offset" per feature, and the site offers a calibration test print.** | Stud fit on FDM printers varies a lot between machines (working stud diameters from 4.6 to 5.0 mm have been reported). Generic defaults plus a 10-minute test print beat guessing. |
 | D12 | **Branding says "brick-compatible".** No LEGO in the name, domain or logo, and the footer carries a trademark disclaimer. | LEGO's Fair Play policy, and the NZ *Zuru* ruling against "LEGO BRICKS COMPATIBLE" packaging. |
 | D13 | **The original model is inspiration only.** All geometry is written from scratch and the original is credited. | The original's license field is empty. |
@@ -113,43 +113,43 @@ These defaults are **provisional** until test prints confirm them. Ranges are cl
 
 - **Domain.** The name is **Bricko**. bricko.com, .app, .io and .dev are taken. brickoclip.com, brickoclips.com and bricko.xyz were free on 2026-11-10. Check trademark databases for "Bricko" before launch: it may be a historic UK construction-toy brand.
 
-## Status (2026-11-10)
+## Status (2026-11-10, after the rework)
 
 | M | State |
 |---|---|
 | M0 | ✅ done |
 | M1 | ✅ done: engine, profiles, STL export, `cli/gen.ts`, tests |
-| M2 | ✅ geometry done; **waiting on the first physical print** |
-| M3 | 🟡 studs and bottom (cavity/holes/flat) done. Hollow studs and the calibration print still to do |
+| M2 | ✅ **reworked to follow the original** (see below). Waiting on the first physical print |
+| M3 | 🟡 studs and pockets done. Calibration test print still to do |
 | M4–M5 | ⏳ |
 
-### Design as built (changes from the plan above)
+### Rework (decided after the teardown in ORIGINAL-TEARDOWN.md)
 
-- **Hinge:** no separate pin. Between each pair of knuckles, the knuckle with the lower z has a 45° male cone that sits in a socket in the next one. The socket is the cone shifted by `c·√2` along the axis, which gives an offset of `c` perpendicular to the surface. Because 45° is printable both ways, this works flat or on its side. Every knuckle reaches the bed in flat orientation.
-- **Dividers: fork snaps (default), keys as fallback.**
-  - **Bulb on the arm:** a hexagonal bulb with 45° faces hangs from the arm into a fork at the divider top. The bulb's flat bottom sits over the fork floor with a whole-layer gap (like a support gap), so it doesn't start printing in mid-air.
-  - **Fork on the divider:** its lips sit above the bulb's widest point. A slot below the bulb gives prongs about 8 mm long to flex. Prongs are 0.9 mm thick, grip is about 0.45 mm per side, strain is about 1%, safe for PLA. The head flares out from the divider at 45°.
-  - **Fallback to a key** (a 45° trapezoid in a groove, alignment only) when the head would narrow a channel mouth by more than 25%, when there is no room for a ≥ 1 mm slot, or near the hinge or the latch arc.
-  - Keys only go where the arm lifts more than it slides while opening (`x ≥ y − hy`). Start and end walls never get a key or a snap.
-  - First design used keys only. The user compared it with the original in OrcaSlicer: the original snaps at every divider and has an end hook. Keys alone left a single latch holding the clip shut.
-- **Latch:** sits low on the latch wall (just above the base plate), so the flexing section is longer and strain is lower for the same grip. The end wall's outer face and the arm's latch wall ("skirt") are **arcs centred on the hinge axis**. Opening slides them past each other at constant clearance, and only the 45°/`catchAngle` catch interferes. Fuzz testing found that straight walls jam on short, tall clips.
-- **First layer:** the first layer of each body is replaced by its footprint (the intersection of slices at 5% and 99.9% of the layer) shrunk by `elephantFoot`. This is generic and works in both orientations.
-- **Clamps (reported as info):**
-  - Barrel: barrel top + clearance must stay below the arm.
-  - Cone: must fit inside the barrel and the next knuckle.
-  - Tab: must stay above the bed.
-  - End wall: grows to cover the arc's dip at the catch height.
-- **Errors (no geometry):**
-  - Knuckles too short.
-  - Clip too short for the catch.
-  - **Clip too tall for its length.** The latch arc would lean more than 45° from vertical.
-- **Clearance slack:** cuts get `c + 0.01` because the curves are polygons. Tests require gap ≥ `c − 0.001` everywhere.
-- **Opening range:** clean to at least 135°. Around 145–150° the arm web meets the base plate corner, which is a physical stop, like the original's.
+- **Prints on its side only**, like the original. D10 is superseded: the flat orientation has been removed. Every profile feature is accurate in the printer's XY plane, so we no longer need special overhang rules.
+- **The part frame is the print frame:** X along the clip with the hinge axis at x = 0, Y thickness, Z width = print height.
+- **Hinge** (as in the original):
+  - **Base:** owns the middle knuckle, with 45° cones that step down to a full-width pin.
+  - **Arm:** owns both outer knuckles, with a bore and cone sockets.
+  - **How it's built:** the base hinge is a 2D (r, z) profile revolved about the axis. The arm's bore and sockets are that profile grown by the clearance. Vertical step gaps are rounded up to whole layers.
+- **Arm clearance:** the arm is a rough solid minus "base grown by the clearance". That gives exact gaps at the grooves, lips, latch, neck and plate. In the middle zone the arm also clears the barrel by `c + 0.1`. In the arm zones the base plate clears the knuckles.
+- **Dividers:** mushroom keys (stem, ball, neck, dome) with pointed arm lips. They don't hold anything (the original's don't either).
+  - **Optional snap mode** (`dividerSnap`): the lips reach `snapDepth` below the ball centre, so each divider clicks.
+- **Latch** (the only lock by default): a hook post with a flat ledge and a 45° ramp, and a J-tongue with a finger that sits `catchOverlap` under the ledge.
+  - The tongue's U-shaped bottom and the thumb tab follow the original's proportions, scaled to the channel height. The hook shrinks to fit short clips.
+  - Opening simulation: overlap peaks around 1–2° (default 7 mm³; the original peaks at 13 mm³) and is free by 3°.
+- **Studs:** flared, Ø−0.2 at the root to Ø+0.2 near the tip, with a top chamfer, 2.0 tall. The downward-facing side has an inclined cut (23°) so they print sideways without support.
+- **Bottom:** pockets around each stud position. Between stud pairs along X there is alternately a tube (OD 8√2 − 4.8) and a rib, plus a spine between rows. A 1-wide clip uses pins. Pocket corners are rounded.
+- **Length:** rounds to the nearest whole stud by stretching or shrinking the channels evenly (`snapLength`).
+- **Defaults:** clearance 0.25 (the original is 0.15–0.27); brick play 0.2 (LEGO standard; the original uses 0.3, see the `original` preset).
+- **Implementation details:**
+  - Clearance offsets use 48-segment arcs. The global edge-length rule would give small radii about 4 segments, and those coarse arcs cut inside the clearance at corners.
+  - Cuts get 0.015 slack.
+  - The gap check has a tolerance of 3 µm.
 
 ### Verification
 
-- **Invariant tests on every preset:** each body is one manifold piece, base ∩ arm = ∅, minGap ≥ clearance, z min = 0, binary STL triangle count correct.
-- **Kinematics:** the arm rotates 0→150° (presets) or 0→135° (random clips) about the hinge with no contact outside the latch. The latch must interfere at small angles and be clear by 35°.
-- **Fuzzing:** fast-check, 60 runs per test by default. `FUZZ_RUNS=400 FUZZ_SEED=7 npm test` for a deeper run.
-- **Mesh:** a final `simplify(1e-4)` removes sliver triangles, so trimesh also reports the STL watertight with exactly 2 bodies.
-- **Slicer smoke test:** still open. The OrcaSlicer 2.3.1 CLI rejects flattened Creality profiles ("process not compatible with printer").
+- **Overlay against the original:** the sections match. The default is 60.7 × 17.25 × 15.8 mm; the original is 60.9 × 17.25 × 15.7.
+- **Preset invariants:** every body is one manifold piece, base ∩ arm = ∅, minGap ≥ clearance, and the clip sits on the bed.
+- **Kinematics (every preset):** the arm opens to **170°** with no contact outside the latch (and the dividers in snap mode). The latch must catch at 1–2° and be free by 10°. Snap dividers must engage.
+- **Fuzzing** (fast-check): random parameters give a valid clip or a clear error, and random clips open cleanly.
+- **Slicer smoke test:** still open (the OrcaSlicer CLI rejects flattened profiles).

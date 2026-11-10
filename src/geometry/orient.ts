@@ -3,18 +3,13 @@ import type { ClipParams } from '../params/schema.ts';
 import type { Scope } from './kernel.ts';
 
 /**
- * Part frame -> bed frame.
- *  flat: base bottom on the bed, studs up (part +Y -> bed +Z).
- *  side: hinge axis vertical (part frame already has the profile in XY).
- * Then centre on XY, put z min at 0 and apply the first-layer inset.
+ * Part frame -> bed frame. The clip prints on its side, so the part frame
+ * already has Z up (hinge axis vertical). Centre on XY, put z min at 0 and
+ * apply the first-layer inset.
  */
 export function toBed(K: ManifoldToplevel, S: Scope, p: ClipParams, bodies: { base: Manifold; arm: Manifold }) {
   const t = S.t;
   let { base, arm } = bodies;
-  if (p.orientation === 'flat') {
-    base = t(base.rotate([90, 0, 0]));
-    arm = t(arm.rotate([90, 0, 0]));
-  }
   const both = t(K.Manifold.compose([base, arm]));
   const bb = both.boundingBox();
   const shift: [number, number, number] = [
@@ -30,8 +25,8 @@ export function toBed(K: ManifoldToplevel, S: Scope, p: ClipParams, bodies: { ba
     arm = firstLayerInset(K, S, arm, p.layerHeight, p.elephantFoot);
   }
   // Collapse sub-micron sliver triangles left by booleans so strict mesh tools see a clean, watertight mesh
-  base = t(base.simplify(1e-4));
-  arm = t(arm.simplify(1e-4));
+  base = dropSlivers(K, S, t(base.simplify(1e-4)));
+  arm = dropSlivers(K, S, t(arm.simplify(1e-4)));
   return { base, arm };
 }
 
