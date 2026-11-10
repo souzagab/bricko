@@ -102,8 +102,13 @@ These defaults are **provisional** until test prints confirm them. Ranges are cl
 | M5 | Polish and launch | Validation UI (warnings plus a checks overlay), mobile layout, name/domain, deploy |
 | Later | 3MF export; bottom options for screws, magnets and adhesive; more clip families; i18n (EN / PT-BR) | |
 
+## Decided later
+
+| # | Decision | Why |
+|---|---|---|
+| D14 | **License: AGPL-3.0-only.** | A hosted fork has to publish its source. All dependencies are MIT or Apache-2.0, and both can be used in AGPLv3 code. |
+| D15 | **Hosting: GitHub Pages**, deployed by a GitHub Actions workflow. | Free and static, and it serves `.wasm` correctly. Set Vite `base` to the repo path until there is a custom domain. |
+
 ## Open questions
 
-- **Name and domain.** The repo name is a placeholder.
-- **License.** MIT (simplest) or AGPL-3.0 (stops closed-source hosted clones)?
-- **Hosting.** Cloudflare Pages or GitHub Pages. Both serve WASM fine.
+- **Name and domain.** The repo name is a placeholder. A custom domain can point at Pages later.

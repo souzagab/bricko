@@ -10,6 +10,10 @@ A browser tool for making **print-in-place, brick-compatible cable clips** to yo
 | [docs/GEOMETRY.md](docs/GEOMETRY.md) | Brick dimensions (with derivations), FDM design rules, print orientation and a teardown of the original clip |
 | [docs/RESEARCH.md](docs/RESEARCH.md) | Research findings, with sources |
 
+## License
+
+[AGPL-3.0-only](LICENSE). If you host a modified version, you must publish its source.
+
 ## Notes
 
 - "Brick-compatible" means it works with standard 8 mm-pitch construction bricks. LEGO® is a trademark of the LEGO Group, which does not sponsor, authorize or endorse this project.
