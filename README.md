@@ -1,10 +1,34 @@
 # Bricko
 
-A browser tool for making **print-in-place, brick-compatible cable clips** to your own measurements. You set the sizes, see a live 3D preview and download an STL that prints on any FDM printer. It is a static site with no server, no account and no slicer lock-in.
+**Print-in-place, brick-compatible cable clips, made to measure.**
 
-> Status: **website and geometry engine working**. Waiting on the first physical print. See [docs/PLAN.md › Status](docs/PLAN.md).
+**▶ Open it: https://souzagab.github.io/bricko/**
 
-## Website
+Set your cable sizes and see the clip update in 3D. Then download an STL that prints on any FDM printer: no supports, no assembly. The clip folds shut on a print-in-place hinge, locks with a hook latch, has studs on top for real bricks, and presses onto bricks or baseplates underneath. It all runs in your browser. Nothing is uploaded, and you don't need an account.
+
+![Bricko: an opened clip in the live preview](docs/img/screenshot-open.png)
+
+## Features
+
+- **Fully parametric:** channel count, per-channel widths, height, clip width in studs, hinge, latch, studs and sockets. Every control comes with validation, help text and automatic adjustments.
+- **Live 3D preview:** in-use and as-printed views, a hinge-opening slider, and a section cut through the width.
+- **Test print:** five small clips, each a step looser than the last, marked with 1–5 dots. Print them once, then click the winners to apply your printer's best clearance, stud fit and socket fit.
+- **Share links:** your design lives in the URL.
+- **Safe output:**
+  - every model is checked before you can download it: two separate solid parts, never touching, every gap at least the clearance
+  - the hinge opens to 170° with nothing hitting except the latch
+  - the STL is a watertight mesh
+- **Free software** (AGPL-3.0).
+
+![Test print dialog](docs/img/screenshot-testprint.png)
+
+## Printing
+
+Print the STL **as downloaded**, lying on its side with the hinge axis vertical. No supports. PETG or PLA+ is recommended. Start with the test print to dial in your printer. The full guide is in the app under *How to print*.
+
+> Status: website and geometry engine working, waiting on the first physical prints. Feedback is welcome in [issues](https://github.com/souzagab/bricko/issues). See [docs/PLAN.md](docs/PLAN.md).
+
+## Development
 
 ```bash
 npm install
