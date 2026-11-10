@@ -6,6 +6,7 @@
  *
  *   npm run build && node tools/screenshots.mjs [outDir]
  *   CHROME=/path/to/chrome node tools/screenshots.mjs
+ *   URL=https://souzagab.github.io/bricko/ node tools/screenshots.mjs out/live
  */
 import { preview } from 'vite';
 import { chromium } from 'playwright-core';
@@ -18,8 +19,9 @@ await mkdir(out, { recursive: true });
 const executablePath = process.env.CHROME ?? ['/usr/bin/chromium', '/usr/bin/google-chrome-stable', '/usr/bin/google-chrome'].find(existsSync);
 if (!executablePath) throw new Error('No Chromium found. Set CHROME=/path/to/chrome');
 
-const server = await preview({ preview: { port: 4179, strictPort: true }, logLevel: 'error' });
-const url = 'http://localhost:4179/';
+// URL=https://… runs against a deployed site instead of a local preview of dist/
+const server = process.env.URL ? null : await preview({ preview: { port: 4179, strictPort: true }, logLevel: 'error' });
+const url = process.env.URL ?? 'http://localhost:4179/';
 const browser = await chromium.launch({ executablePath, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const problems = [];
 let failed = false;
@@ -98,7 +100,7 @@ try {
   problems.push(`exception: ${e.message}`);
 } finally {
   await browser.close();
-  await new Promise((r) => server.httpServer.close(r));
+  if (server) await new Promise((r) => server.httpServer.close(r));
 }
 await writeFile(join(out, 'report.json'), JSON.stringify({ report, problems }, null, 2));
 console.log(JSON.stringify({ report, problems }, null, 2));
