@@ -9,18 +9,29 @@
     "node": ">=23.6"
   },
   "scripts": {
-    "gen": "node cli/gen.ts",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "gen": "node cli/gen.ts",
+    "shots": "node tools/screenshots.mjs"
   },
   "dependencies": {
     "manifold-3d": "^3.5.4",
+    "three": "^0.187.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@types/node": "^26.6.6",
+    "@types/three": "^0.187.0",
     "fast-check": "^4.10.2",
+    "playwright-core": "^1.65.0",
+    "svelte": "^5.57.3",
+    "svelte-check": "^4.7.8",
     "typescript": "^6.0.3",
+    "vite": "^8.3.7",
     "vitest": "^5.1.0"
   }
 }

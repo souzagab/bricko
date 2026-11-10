@@ -120,8 +120,9 @@ These defaults are **provisional** until test prints confirm them. Ranges are cl
 | M0 | ✅ done |
 | M1 | ✅ done: engine, profiles, STL export, `cli/gen.ts`, tests |
 | M2 | ✅ **reworked to follow the original** (see below). Waiting on the first physical print |
-| M3 | 🟡 studs and pockets done. Calibration test print still to do |
-| M4–M5 | ⏳ |
+| M3 | ✅ studs, pockets and the **test print** (five clips stepping clearance, stud fit and socket fit; identified by 1–5 dots) |
+| M4 | ✅ website: schema-driven controls, worker, three.js viewer (in use / as printed / opening / section), share links, STL and test-print downloads, mobile layout, dark mode |
+| M5 | 🟡 Pages workflow ready. Still to do: GitHub repo, domain, physical print validation, social preview image, PT-BR |
 
 ### Rework (decided after the teardown in ORIGINAL-TEARDOWN.md)
 
@@ -153,3 +154,18 @@ These defaults are **provisional** until test prints confirm them. Ranges are cl
 - **Kinematics (every preset):** the arm opens to **170°** with no contact outside the latch (and the dividers in snap mode). The latch must catch at 1–2° and be free by 10°. Snap dividers must engage.
 - **Fuzzing** (fast-check): random parameters give a valid clip or a clear error, and random clips open cleanly.
 - **Slicer smoke test:** still open (the OrcaSlicer CLI rejects flattened profiles).
+
+### Website (M4)
+
+- **Code layout:**
+  - `src/web/`: Svelte app.
+  - `src/web/worker/geometry.worker.ts`: runs the same `generate()` / `generateCoupon()` as the CLI.
+  - `src/web/lib/fields.ts`: builds the UI spec from `z.toJSONSchema(ClipParamsSchema)`, so the form can't drift from validation.
+- **Share links:** `#v=1&key=value…` holds only the values that differ from the defaults. Decoding is tolerant: invalid keys are dropped.
+- **Mesh cleanup** (`src/export/clean.ts`): Manifold's double-precision output can hold needle and cap triangles that become zero-area as float32. We weld vertices within 0.1 µm and flip caps, so every exported STL is a closed 2-manifold with no zero-area triangles. Checked in the tests for every preset, and by trimesh on the browser's own downloads.
+- **Browser smoke test** (`tools/screenshots.mjs`), using headless Chromium with SwiftShader WebGL:
+  - first model in about 1 s, including the WASM load; rebuilds take 370–450 ms
+  - changes a parameter, checks the share link, downloads the STL and the test print, and applies a test-print value
+  - checks mobile, dark mode and the error state
+  - fails on any console error
+

@@ -27,7 +27,7 @@ export function toBed(K: ManifoldToplevel, S: Scope, p: ClipParams, bodies: { ba
   // Collapse sub-micron sliver triangles left by booleans so strict mesh tools see a clean, watertight mesh
   base = dropSlivers(K, S, t(base.simplify(1e-4)));
   arm = dropSlivers(K, S, t(arm.simplify(1e-4)));
-  return { base, arm };
+  return { base, arm, shift };
 }
 
 /**

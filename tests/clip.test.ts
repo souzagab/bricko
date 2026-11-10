@@ -6,6 +6,21 @@ import { parseParams, type ClipParamsInput } from '../src/params/schema.ts';
 import { derive } from '../src/rules/derive.ts';
 import { getKernel, Scope } from '../src/geometry/kernel.ts';
 import { buildClip } from '../src/geometry/clip.ts';
+import { isClosedManifold } from '../src/export/clean.ts';
+import type { MeshLike } from '../src/export/stl.ts';
+
+/** Zero-area triangles at float32 precision (what the STL stores). */
+function degenerate(m: MeshLike): number {
+  const v = m.vertProperties, n = m.numProp, t = m.triVerts;
+  let c = 0;
+  for (let i = 0; i < t.length; i += 3) {
+    const a = t[i]! * n, b = t[i + 1]! * n, d = t[i + 2]! * n;
+    const ux = v[b]! - v[a]!, uy = v[b + 1]! - v[a + 1]!, uz = v[b + 2]! - v[a + 2]!;
+    const wx = v[d]! - v[a]!, wy = v[d + 1]! - v[a + 1]!, wz = v[d + 2]! - v[a + 2]!;
+    if (Math.hypot(uy * wz - uz * wy, uz * wx - ux * wz, ux * wy - uy * wx) < 1e-10) c++;
+  }
+  return c;
+}
 
 /** FUZZ_RUNS=500 FUZZ_SEED=1 npm test   for a deeper run */
 const FUZZ = {
@@ -19,6 +34,10 @@ describe('presets', () => {
       const r = await generate(preset.params);
       expect(r.issues.filter((i) => i.level === 'error')).toEqual([]);
       expect(r.report?.failures).toEqual([]);
+      for (const m of [r.meshes!.base, r.meshes!.arm]) {
+        expect(isClosedManifold(m), 'exported mesh is a closed 2-manifold').toBe(true);
+        expect(degenerate(m), 'zero-area triangles in the STL').toBe(0);
+      }
     });
   }
 });

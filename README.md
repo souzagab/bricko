@@ -2,9 +2,28 @@
 
 A browser tool for making **print-in-place, brick-compatible cable clips** to your own measurements. You set the sizes, see a live 3D preview and download an STL that prints on any FDM printer. It is a static site with no server, no account and no slicer lock-in.
 
-> Status: **geometry engine working** (CLI + tests). No web UI yet. See [docs/PLAN.md § Status](docs/PLAN.md#status-2026-11-10).
+> Status: **website and geometry engine working**. Waiting on the first physical print. See [docs/PLAN.md › Status](docs/PLAN.md).
 
-## Quick start
+## Website
+
+```bash
+npm install
+npm run dev        # http://localhost:5173: settings, live 3D preview, STL download, share links, test print
+npm run build      # static site in dist/ (relative paths: host anywhere)
+npm run preview    # serve the build
+npm run check      # svelte-check (types + a11y)
+npm run shots      # headless-Chromium smoke test with screenshots (needs a Chromium; CHROME=/path to override)
+```
+
+**Deploy:** push to GitHub and enable Pages (Settings → Pages → Source: GitHub Actions). `.github/workflows/pages.yml` then type-checks, tests, builds and publishes on every push to `main`.
+
+**How it works:**
+- **UI:** Svelte 5. Every control is generated from the zod parameter schema.
+- **Geometry:** runs in a Web Worker (manifold-3d WASM); only the newest request is kept, so dragging a slider never piles up builds.
+- **Viewer:** three.js, rendered on demand: in-use / as-printed views, live opening angle, section cut.
+- **Export:** the STL is written in the browser. Nothing is uploaded.
+
+## Command line
 
 ```bash
 npm install

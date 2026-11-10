@@ -5,6 +5,7 @@ import { buildClip } from './geometry/clip.ts';
 import { toBed } from './geometry/orient.ts';
 import { checkClip, type CheckReport } from './geometry/checks.ts';
 import { toBinaryStl, type MeshLike } from './export/stl.ts';
+import { cleanMesh } from './export/clean.ts';
 
 export interface GenerateResult {
   params: ClipParams;
@@ -12,6 +13,8 @@ export interface GenerateResult {
   issues: Issue[];
   report: CheckReport | null;
   meshes: { base: MeshLike; arm: MeshLike } | null;
+  /** part frame -> bed frame translation (the hinge axis is at part (0, hy)) */
+  shift: [number, number, number] | null;
   ms: number;
 }
 
@@ -22,7 +25,7 @@ export async function generate(input: unknown): Promise<GenerateResult> {
   const derived = derive(params);
   const issues = derived.issues;
   if (issues.some((i) => i.level === 'error')) {
-    return { params, derived, issues, report: null, meshes: null, ms: performance.now() - t0 };
+    return { params, derived, issues, report: null, meshes: null, shift: null, ms: performance.now() - t0 };
   }
   const K = await getKernel();
   K.setMinCircularAngle(5);
@@ -30,15 +33,12 @@ export async function generate(input: unknown): Promise<GenerateResult> {
   const S = new Scope();
   try {
     const part = buildClip(K, S, params, derived);
-    const { base, arm } = toBed(K, S, params, part);
+    const { base, arm, shift } = toBed(K, S, params, part);
     const report = checkClip(K, S, derived, base, arm);
-    const copy = (m: ReturnType<typeof base.getMesh>): MeshLike => ({
-      numProp: m.numProp,
-      vertProperties: m.vertProperties.slice(),
-      triVerts: m.triVerts.slice(),
-    });
+    // cleanMesh copies out of WASM memory and welds float32 needles (see clean.ts)
+    const copy = (m: ReturnType<typeof base.getMesh>): MeshLike => cleanMesh(m);
     const meshes = { base: copy(base.getMesh()), arm: copy(arm.getMesh()) };
-    return { params, derived, issues, report, meshes, ms: performance.now() - t0 };
+    return { params, derived, issues, report, meshes, shift, ms: performance.now() - t0 };
   } finally {
     S.free();
   }

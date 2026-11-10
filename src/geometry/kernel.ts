@@ -2,10 +2,16 @@ import Module from 'manifold-3d';
 import type { ManifoldToplevel } from 'manifold-3d';
 
 let wasm: Promise<ManifoldToplevel> | null = null;
+let config: { locateFile: () => string } | undefined;
+
+/** Browser builds pass the bundled .wasm URL here before the first getKernel(). */
+export function configureKernel(opts: { wasmUrl: string }): void {
+  config = { locateFile: () => opts.wasmUrl };
+}
 
 /** Loads the Manifold WASM module once. Works in Node and in a browser worker. */
 export function getKernel(): Promise<ManifoldToplevel> {
-  wasm ??= Module().then((m) => {
+  wasm ??= Module(config).then((m) => {
     m.setup();
     return m;
   });
