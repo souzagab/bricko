@@ -13,3 +13,4 @@ coverage/
 
 # local reference files (third-party, license unknown — never commit)
 /reference/
+.vitest/

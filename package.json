@@ -1,0 +1,26 @@
+{
+  "name": "bricko",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "description": "Parametric print-in-place brick-compatible cable clip generator",
+  "engines": {
+    "node": ">=23.6"
+  },
+  "scripts": {
+    "gen": "node cli/gen.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "manifold-3d": "^3.5.4",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "fast-check": "^4.10.2",
+    "typescript": "^6.0.3",
+    "vitest": "^5.1.0"
+  }
+}

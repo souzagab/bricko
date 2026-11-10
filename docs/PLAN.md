@@ -111,4 +111,40 @@ These defaults are **provisional** until test prints confirm them. Ranges are cl
 
 ## Open questions
 
-- **Name and domain.** The repo name is a placeholder. A custom domain can point at Pages later.
+- **Domain.** The name is **Bricko**. bricko.com, .app, .io and .dev are taken. brickoclip.com, brickoclips.com and bricko.xyz were free on 2026-11-10. Check trademark databases for "Bricko" before launch: it may be a historic UK construction-toy brand.
+
+## Status (2026-11-10)
+
+| M | State |
+|---|---|
+| M0 | ✅ done |
+| M1 | ✅ done: engine, profiles, STL export, `cli/gen.ts`, tests |
+| M2 | ✅ geometry done; **waiting on the first physical print** |
+| M3 | 🟡 studs and bottom (cavity/holes/flat) done. Hollow studs and the calibration print still to do |
+| M4–M5 | ⏳ |
+
+### Design as built (changes from the plan above)
+
+- **Hinge:** no separate pin. Between each pair of knuckles, the knuckle with the lower z has a 45° male cone that sits in a socket in the next one. The socket is the cone shifted by `c·√2` along the axis, which gives an offset of `c` perpendicular to the surface. Because 45° is printable both ways, this works flat or on its side. Every knuckle reaches the bed in flat orientation.
+- **Dividers:** **keyed** (a 45° trapezoid that sits in a groove under the arm) instead of snapping. A round snap bulb would leave the arm's lips starting in mid-air when printed flat. The **end latch is what holds the clip shut.** Keys only go on dividers where the arm lifts more than it slides while opening (`x ≥ y − hy`). Start and end walls never get one, and neither does any divider whose groove would reach the latch arc (on tall clips the arc leans over the last dividers).
+- **Latch:** the end wall's outer face and the arm's latch wall ("skirt") are **arcs centred on the hinge axis**. Opening slides them past each other at constant clearance, and only the 45°/`catchAngle` catch interferes. Fuzz testing found that straight walls jam on short, tall clips.
+- **First layer:** the first layer of each body is replaced by its footprint (the intersection of slices at 5% and 99.9% of the layer) shrunk by `elephantFoot`. This is generic and works in both orientations.
+- **Clamps (reported as info):**
+  - Barrel: barrel top + clearance must stay below the arm.
+  - Cone: must fit inside the barrel and the next knuckle.
+  - Tab: must stay above the bed.
+  - End wall: grows to cover the arc's dip at the catch height.
+- **Errors (no geometry):**
+  - Knuckles too short.
+  - Clip too short for the catch.
+  - **Clip too tall for its length.** The latch arc would lean more than 45° from vertical.
+- **Clearance slack:** cuts get `c + 0.01` because the curves are polygons. Tests require gap ≥ `c − 0.001` everywhere.
+- **Opening range:** clean to at least 135°. Around 145–150° the arm web meets the base plate corner, which is a physical stop, like the original's.
+
+### Verification
+
+- **Invariant tests on every preset:** each body is one manifold piece, base ∩ arm = ∅, minGap ≥ clearance, z min = 0, binary STL triangle count correct.
+- **Kinematics:** the arm rotates 0→150° (presets) or 0→135° (random clips) about the hinge with no contact outside the latch. The latch must interfere at small angles and be clear by 35°.
+- **Fuzzing:** fast-check, 60 runs per test by default. `FUZZ_RUNS=400 FUZZ_SEED=7 npm test` for a deeper run.
+- **Mesh:** a final `simplify(1e-4)` removes sliver triangles, so trimesh also reports the STL watertight with exactly 2 bodies.
+- **Slicer smoke test:** still open. The OrcaSlicer 2.3.1 CLI rejects flattened Creality profiles ("process not compatible with printer").

@@ -1,8 +1,21 @@
-# cable-clip-generator (working name)
+# Bricko
 
 A browser tool for making **print-in-place, brick-compatible cable clips** to your own measurements. You set the sizes, see a live 3D preview and download an STL that prints on any FDM printer. It is a static site with no server, no account and no slicer lock-in.
 
-> Status: **planning**. No code yet. Read the docs below first.
+> Status: **geometry engine working** (CLI + tests). No web UI yet. See [docs/PLAN.md § Status](docs/PLAN.md#status-2026-11-10).
+
+## Quick start
+
+```bash
+npm install
+npm test                                   # invariants, kinematics, fuzzing
+node cli/gen.ts -o clip.stl                # default clip
+node cli/gen.ts --preset usbc -o usbc.stl  # presets: default usbc power hdmi bundle slim mixed side
+node cli/gen.ts --set channelCount=3 --set channelWidth=7 --set radialClearance=0.4 -o mine.stl
+node cli/gen.ts --all-presets -o out/
+```
+
+Requires Node ≥ 23.6, which runs TypeScript directly.
 
 | Doc | What's in it |
 |---|---|
