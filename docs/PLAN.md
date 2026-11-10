@@ -169,3 +169,26 @@ These defaults are **provisional** until test prints confirm them. Ranges are cl
   - checks mobile, dark mode and the error state
   - fails on any console error
 
+
+### UX overhaul (2026-11-10)
+
+- **Main panel: four steps in plain language.**
+  1. **Your cables:** pick by name (earphones, phone charger, laptop USB-C, Ethernet, HDMI, power cord) or *Other size*, plus how they sit (*Easy*: drop in, +1.5 mm; *Snug*: click in, +0.5 mm). Channel widths and height are derived from this list (`src/web/lib/cables.ts`).
+  2. **Width** in studs.
+  3. **Bricks:** studs on top, sockets underneath.
+  4. **Hinge fit:** Tighter 0.20 / Standard 0.25 / Looser 0.32, with a link to the fit test.
+- **Advanced settings (collapsed):**
+  - every other parameter, grouped
+  - extra room around cables
+  - preview tools (open angle, cut-away)
+  - checks (gaps, volume, build time)
+  - notes and warnings
+- **Errors** appear on the main panel. A test checks that no combination of main-panel choices can produce one.
+- **Viewer:** cables are drawn lying in their channels in the desk view. The camera frames the full range of motion. A single Open/Close lid button replaces the angle slider.
+- **Downloads:**
+  - file names describe the cables, e.g. `bricko_phone-phone-power_2wide.stl`
+  - a toast after download says how to print it
+  - on phones, a sticky Download button sits inside the settings sheet
+- **Share links** store the cable list (`cables=phone,phone,power`), not channel sizes. Older channel-width links are converted to custom cables.
+- **Standard brick sizes** are the defaults: 8.0 mm pitch, 4.8 mm studs, 1.7 mm tall and straight (no flare), 3.2 mm plates for base and lid, 0.2 mm play, 2.0 mm socket depth.
+- **Wording:** the site and README no longer mention any brand or earlier design.

@@ -1,22 +1,26 @@
 <script lang="ts">
-  // static content
+  let { open = $bindable(false) }: { open?: boolean } = $props();
+  let el: HTMLDetailsElement;
+  $effect(() => {
+    if (open) setTimeout(() => el?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  });
 </script>
 
-<details class="guide">
+<details class="guide" bind:open bind:this={el}>
   <summary>How to print</summary>
   <ol>
-    <li><strong>Print it exactly as downloaded</strong>: lying on its side, hinge pointing up. No supports. A brim is optional.</li>
-    <li><strong>PETG or PLA+</strong> work best. Plain PLA works, but the latch gets tired sooner.</li>
-    <li>If your slicer's <em>elephant foot compensation</em> is on, set <em>First-layer inset</em> (Printing) to 0. Use one or the other, not both.</li>
-    <li>After printing, open the clip gently once to free the hinge.</li>
-    <li><strong>Hinge fused?</strong> Raise <em>Clearance</em> by 0.05 mm and reprint. <strong>Wobbly?</strong> Lower it by 0.05 mm.</li>
-    <li><strong>Bricks too loose or too tight?</strong> Adjust <em>Stud fit</em> (top) or <em>Socket fit</em> (bottom) in 0.03 mm steps.</li>
+    <li><strong>Don't rotate it.</strong> The file is already lying on its side, hinge pointing up. That's how it prints best.</li>
+    <li><strong>No supports, no assembly.</strong> The hinge prints already joined. A brim is fine if your bed is slippery.</li>
+    <li><strong>PETG or PLA+</strong> work best. Plain PLA works too.</li>
+    <li>When it's done, open the lid gently once to free the hinge.</li>
+    <li><strong>Hinge stuck?</strong> Choose <em>Looser</em> under Hinge fit and print again. <strong>Wobbly?</strong> Choose <em>Tighter</em>.</li>
+    <li><strong>First clip?</strong> Print the fit test (Hinge fit → <em>Print a fit test</em>). It tells you the best settings for your printer.</li>
   </ol>
 </details>
 
 <style>
-  .guide { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 0 14px; }
+  .guide { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 0 14px; scroll-margin-top: 12px; }
   summary { cursor: pointer; padding: 12px 0; font-weight: 650; }
-  ol { margin: 0 0 14px; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 0.86rem; line-height: 1.45; color: var(--text); }
+  ol { margin: 0 0 14px; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 0.88rem; line-height: 1.45; color: var(--text); }
   em { font-style: normal; font-weight: 600; }
 </style>

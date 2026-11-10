@@ -4,9 +4,9 @@ import { z } from 'zod';
  * Single source of truth for every user-facing parameter.
  * `.meta()` carries UI info (group, label, unit, step, help). The UI, URL
  * encoding and validation all read from this schema.
- * Units are mm and degrees. Defaults follow the original design (see
- * docs/ORIGINAL-TEARDOWN.md), except clearances, which are a little looser
- * so they work on more printers.
+ * Units are mm and degrees. Brick dimensions default to the standard system
+ * (8.0 mm pitch, 4.8 mm studs 1.7 mm tall, 3.2 mm plates, 0.2 mm play);
+ * clearances default to values that work on most printers.
  */
 
 export type ParamMeta = {
@@ -32,14 +32,14 @@ export const ClipParamsSchema = z.object({
   channelWidths: z.array(z.number().min(3).max(60)).optional()
     .meta({ group: 'channels', label: 'Per-channel widths', unit: 'mm', advanced: true,
       help: 'Overrides channel width. Length must equal the channel count.' }),
-  channelHeight: num(6, 30, 9.15, { group: 'channels', label: 'Channel height', unit: 'mm', step: 0.05 }),
+  channelHeight: num(6, 30, 9.6, { group: 'channels', label: 'Channel height', unit: 'mm', step: 0.05 }),
 
   // Body
   studsAcross: int(1, 6, 2, { group: 'body', label: 'Width (studs)', unit: 'count' }),
   snapLength: z.boolean().default(true).meta({ group: 'body', label: 'Round length to whole studs',
     help: 'Stretches the channels a little so the clip is a whole number of studs long.' }),
-  baseThickness: num(2.4, 8, 3.05, { group: 'body', label: 'Base thickness', unit: 'mm', step: 0.05 }),
-  armThickness: num(1.6, 8, 3.05, { group: 'body', label: 'Arm thickness', unit: 'mm', step: 0.05 }),
+  baseThickness: num(2.4, 8, 3.2, { group: 'body', label: 'Base thickness', unit: 'mm', step: 0.05, help: 'Standard plate height is 3.2 mm.' }),
+  armThickness: num(1.6, 8, 3.2, { group: 'body', label: 'Lid thickness', unit: 'mm', step: 0.05, help: 'Standard plate height is 3.2 mm.' }),
   floorFillet: num(0, 4, 1.85, { group: 'body', label: 'Floor fillet', unit: 'mm', step: 0.05, advanced: true }),
 
   // Dividers
@@ -75,11 +75,11 @@ export const ClipParamsSchema = z.object({
   studsOn: z.boolean().default(true).meta({ group: 'studs', label: 'Studs on top' }),
   studPitch: num(7.5, 8.5, 8.0, { group: 'studs', label: 'Stud pitch', unit: 'mm', step: 0.01, advanced: true }),
   brickPlay: num(0, 0.6, 0.2, { group: 'studs', label: 'Brick play', unit: 'mm', step: 0.01, advanced: true,
-    help: 'Size = n·pitch − play. LEGO uses 0.2; the original clip used 0.3.' }),
+    help: 'Parts are n × pitch minus this, so neighbouring bricks do not rub. Standard is 0.2 mm.' }),
   studDiameter: num(4, 5.6, 4.8, { group: 'studs', label: 'Stud Ø', unit: 'mm', step: 0.01 }),
-  studHeight: num(1, 2.4, 2.0, { group: 'studs', label: 'Stud height', unit: 'mm', step: 0.05 }),
-  studFlare: num(0, 0.6, 0.2, { group: 'studs', label: 'Stud flare', unit: 'mm', step: 0.01, advanced: true,
-    help: 'Studs taper out from Ø−flare at the root to Ø+flare near the tip, for a wedge fit.' }),
+  studHeight: num(1, 2.4, 1.7, { group: 'studs', label: 'Stud height', unit: 'mm', step: 0.05 }),
+  studFlare: num(0, 0.6, 0, { group: 'studs', label: 'Stud flare', unit: 'mm', step: 0.01, advanced: true,
+    help: 'Taper studs from Ø−flare at the root to Ø+flare near the tip, for a tighter wedge fit. Standard studs are straight (0).' }),
   studUndercut: num(0, 45, 23, { group: 'studs', label: 'Stud underside angle', unit: 'deg', step: 1, advanced: true,
     help: 'Flattens the downward side of each sideways-printed stud so it prints without support. 0 = off.' }),
   studFit: num(-0.3, 0.3, 0, { group: 'studs', label: 'Stud fit', unit: 'mm', step: 0.01,
@@ -88,7 +88,7 @@ export const ClipParamsSchema = z.object({
   // Bottom (brick sockets)
   bottomMode: z.enum(['pockets', 'flat']).default('pockets')
     .meta({ group: 'bottom', label: 'Bottom', help: 'pockets: presses onto bricks and baseplates.' }),
-  socketDepth: num(1, 4, 2.3, { group: 'bottom', label: 'Socket depth', unit: 'mm', step: 0.05, advanced: true }),
+  socketDepth: num(1, 4, 2.0, { group: 'bottom', label: 'Socket depth', unit: 'mm', step: 0.05, advanced: true }),
   socketFit: num(-0.2, 0.4, 0.05, { group: 'bottom', label: 'Socket fit', unit: 'mm', step: 0.01,
     help: 'Gap between a real stud and the pocket walls. Bigger = looser.' }),
 

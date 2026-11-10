@@ -29,7 +29,6 @@
   }
   function use(key: 'clearance' | 'studFit' | 'socketFit', v: number) {
     app.params[key] = v;
-    app.preset = 'custom';
   }
   const dots = (n: number) => '●'.repeat(n);
 </script>
@@ -37,12 +36,12 @@
 <div class="backdrop" role="presentation" onclick={onclose}></div>
 <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="tp-title">
   <header>
-    <h2 id="tp-title">Find your printer's fit</h2>
+    <h2 id="tp-title">Find your printer's best fit</h2>
     <button class="x" onclick={onclose} aria-label="Close">✕</button>
   </header>
   <p>
-    Five small clips, each a step looser than the last, centred on your current settings.
-    Clip <b>●●●</b> uses exactly what you have now. Print them on their side like a normal clip, then:
+    Every printer is a little different. This prints five mini clips in one go (about 25 g), each a little looser than the last,
+    and the dots on each clip tell them apart. The 3-dot clip uses your current settings. When they're printed:
   </p>
   <ol>
     <li><b>Hinge:</b> pick the tightest clip whose hinge turns freely.</li>
@@ -51,7 +50,7 @@
   </ol>
   {#if fromSaved}<p class="hint">Showing the values from your last downloaded test print.</p>{/if}
   <div class="table" role="table">
-    <div class="tr th" role="row"><span>Dots</span><span>Clearance</span><span>Stud fit</span><span>Socket fit</span></div>
+    <div class="tr th" role="row"><span>Dots</span><span>Hinge gap</span><span>Studs on top</span><span>Underside</span></div>
     {#each specs as s (s.dots)}
       <div class="tr" role="row">
         <span class="dots" aria-label="{s.dots} dots">{dots(s.dots)}</span>

@@ -20,16 +20,20 @@ export interface Field {
   options?: { value: string; label: string }[];
 }
 
+/** Groups for the Advanced panel, in the order a curious user would want them. */
 export const GROUPS: { id: ParamGroup; title: string; blurb: string }[] = [
-  { id: 'channels', title: 'Channels', blurb: 'How many cables, and how big.' },
-  { id: 'body', title: 'Body', blurb: 'Overall size and wall thickness.' },
-  { id: 'dividers', title: 'Dividers', blurb: 'The walls between channels.' },
-  { id: 'hinge', title: 'Hinge & fit', blurb: 'Print-in-place hinge and the gap between moving parts.' },
+  { id: 'hinge', title: 'Fit & hinge', blurb: 'Gap between moving parts and hinge size.' },
+  { id: 'studs', title: 'Brick studs', blurb: 'Standard sizes by default. Change only if your bricks fit badly.' },
+  { id: 'bottom', title: 'Brick sockets', blurb: 'The pockets underneath that press onto bricks.' },
+  { id: 'body', title: 'Body', blurb: 'Wall and plate thickness.' },
+  { id: 'dividers', title: 'Dividers', blurb: 'The walls between cables.' },
   { id: 'latch', title: 'Latch', blurb: 'The hook that keeps the clip shut.' },
-  { id: 'studs', title: 'Studs', blurb: 'Brick-compatible studs on top.' },
-  { id: 'bottom', title: 'Bottom', blurb: 'Sockets that press onto bricks and baseplates.' },
-  { id: 'printing', title: 'Printing', blurb: 'Match these to your printer.' },
+  { id: 'printing', title: 'Printer', blurb: 'Match these to your printer and slicer.' },
+  { id: 'channels', title: 'Channels', blurb: '' },
 ];
+
+/** Set from the main panel (cables, width, bricks), so the Advanced panel leaves them out. */
+export const SIMPLE_KEYS = new Set<string>(['channelCount', 'channelWidth', 'channelWidths', 'channelHeight', 'studsAcross', 'studsOn', 'bottomMode']);
 
 const ENUM_LABELS: Record<string, string> = { pockets: 'Brick sockets', flat: 'Flat' };
 

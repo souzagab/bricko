@@ -68,11 +68,15 @@ describe('derived dimensions', () => {
     expect((d.gzL / 0.12) % 1).toBeCloseTo(0, 6);
     expect(d.gzL).toBeGreaterThanOrEqual(0.25);
   });
-  it('default matches the original clip within 1 mm', () => {
+  it('defaults use standard brick sizes', () => {
     const d = derive(parseParams({}));
-    expect(d.xEnd + d.Rb).toBeGreaterThan(59.9); // original 60.9 long
-    expect(d.xEnd + d.Rb).toBeLessThan(61.9);
-    expect(d.yTop + d.stud.height).toBeCloseTo(17.25, 1);
+    expect(d.tb).toBeCloseTo(3.2, 6); // one plate
+    expect(d.ta).toBeCloseTo(3.2, 6);
+    expect(d.yTop).toBeCloseTo(16.0, 6); // five plates
+    expect(d.stud.height).toBeCloseTo(1.7, 6);
+    expect(d.stud.rRoot).toBeCloseTo(2.4, 6); // straight 4.8 mm studs
+    expect(d.stud.rTip).toBeCloseTo(2.4, 6);
+    expect(d.W).toBeCloseTo(15.8, 6);
   });
 });
 
@@ -109,7 +113,7 @@ async function opening(input: ClipParamsInput, angles: number[]) {
 }
 
 describe('kinematics', () => {
-  for (const name of ['default', 'usbc', 'power', 'bundle', 'slim', 'mixed', 'snap', 'original']) {
+  for (const name of ['default', 'usbc', 'power', 'bundle', 'slim', 'mixed', 'snap', 'tight']) {
     it(`${name}: opens to 170° touching nothing but the latch (and snaps)`, async () => {
       const res = await opening(PRESETS[name]!.params, [1, 2, 3, 5, 10, 20, 45, 90, 135, 170]);
       for (const r of res) expect(r.outside, `collision at ${r.deg}°`).toBeLessThan(1e-3);

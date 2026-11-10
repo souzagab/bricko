@@ -14,6 +14,8 @@ export interface BuildResult {
   hy: number; // hinge axis height in the part frame
   W: number;
   clearance: number;
+  channels: { x0: number; x1: number }[]; // part frame
+  tb: number; // channel floor height, part frame
 }
 
 export type WorkerRequest = { id: number; kind: 'clip' | 'coupon'; params: ClipParamsInput };

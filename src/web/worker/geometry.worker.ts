@@ -35,6 +35,7 @@ ctx.onmessage = async (e) => {
       result: {
         params: r.params, issues: r.issues, report: r.report, meshes: r.meshes, shift: r.shift, ms: r.ms,
         hy: r.derived.hy, W: r.derived.W, clearance: r.derived.c,
+        channels: r.derived.channels, tb: r.derived.tb,
       },
     }, transfer);
   } catch (err) {

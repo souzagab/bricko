@@ -16,8 +16,10 @@
     section: number; // 0..1 of the width kept, 1 = no cut
     dark: boolean;
     resetToken: number;
+    /** cables to draw lying in the channels (bed frame), desk view only */
+    cables?: { x: number; y: number; r: number }[];
   }
-  let { meshes, axis, width, mode, angle, section, dark, resetToken }: Props = $props();
+  let { meshes, axis, width, mode, angle, section, dark, resetToken, cables = [] }: Props = $props();
 
   let host: HTMLDivElement;
   let renderer: THREE.WebGLRenderer;
@@ -32,6 +34,8 @@
   const clip = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
   const matBase = new THREE.MeshStandardMaterial({ color: 0xf2b233, roughness: 0.5, metalness: 0.02, side: THREE.DoubleSide });
   const matArm = new THREE.MeshStandardMaterial({ color: 0x3d7be6, roughness: 0.5, metalness: 0.02, side: THREE.DoubleSide });
+  const cableGroup = new THREE.Group();
+  const matCable = new THREE.MeshStandardMaterial({ color: 0x34373e, roughness: 0.55, metalness: 0.05 });
   let baseMesh: THREE.Mesh | null = null;
   let armMesh: THREE.Mesh | null = null;
   let fitted = false;
@@ -72,6 +76,21 @@
     armMesh.position.set(-axis[0], -axis[1], 0);
     armPivot.add(armMesh);
     if (!armPivot.parent) root.add(armPivot);
+    if (!cableGroup.parent) root.add(cableGroup);
+  }
+
+  function replaceCables() {
+    for (const m of [...cableGroup.children] as THREE.Mesh[]) { cableGroup.remove(m); m.geometry.dispose(); }
+    const len = width + 26;
+    for (const c of cables) {
+      const g = new THREE.CylinderGeometry(c.r, c.r, len, 28, 1, false);
+      g.rotateX(Math.PI / 2); // along bed Z (the clip's width)
+      const m = new THREE.Mesh(g, matCable);
+      m.position.set(c.x, c.y, width / 2);
+      m.castShadow = true;
+      cableGroup.add(m);
+    }
+    cableGroup.visible = mode === 'use';
   }
 
   /** Orient the bed frame for the view mode and put the closed clip on the ground, centred. */
@@ -79,15 +98,28 @@
     root.rotation.set(mode === 'print' ? -Math.PI / 2 : 0, 0, 0);
     root.position.set(0, 0, 0);
     const keep = armPivot.rotation.z;
+    const showCables = cableGroup.visible;
     armPivot.rotation.z = 0;
+    cableGroup.visible = false; // place and frame by the clip alone
     root.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(root);
+    const box = new THREE.Box3().setFromObject(root, true);
     armPivot.rotation.z = keep;
+    cableGroup.visible = showCables;
     if (box.isEmpty()) return null;
     const c = box.getCenter(new THREE.Vector3());
     root.position.set(-c.x, -box.min.y, -c.z);
+    // Frame the whole range of motion (closed and opened), so opening the lid stays in view
+    cableGroup.visible = false;
+    armPivot.rotation.z = 0;
     root.updateMatrixWorld(true);
-    return new THREE.Box3().setFromObject(root);
+    const placed = new THREE.Box3().setFromObject(root, true);
+    armPivot.rotation.z = THREE.MathUtils.degToRad(120);
+    root.updateMatrixWorld(true);
+    placed.union(new THREE.Box3().setFromObject(root, true));
+    armPivot.rotation.z = keep;
+    cableGroup.visible = showCables;
+    root.updateMatrixWorld(true);
+    return placed;
   }
 
   function updateGround(box: THREE.Box3) {
@@ -217,6 +249,14 @@
     const box = placeRoot();
     if (box) { updateGround(box); fitCamera(box); }
     updateClip();
+    requestRender();
+  });
+
+  // Cables
+  $effect(() => {
+    void cables; void width; void mode;
+    if (!renderer) return;
+    replaceCables();
     requestRender();
   });
 
