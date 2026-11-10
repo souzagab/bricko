@@ -66,7 +66,31 @@ export function buildClip(K: ManifoldToplevel, S: Scope, p: ClipParams, d: Deriv
     if (w.keyed) baseParts.push(keyShape(w.x0, w.x1));
   }
   const notch = t(poly(bump).offset(c, 'Miter', 4));
-  const baseCore = t(t(t(union(baseParts)).intersect(arcDisc(skirt.R0))).subtract(notch));
+  // Divider snaps: fork head on the base, bulb + neck on the arm
+  const snapCuts: CrossSection[] = [];
+  const armSnaps: CrossSection[] = [];
+  for (const s of d.snaps) {
+    const { xc, yb, rb, sw, fb, yBottom } = s;
+    const bulb = poly([
+      [xc - fb / 2, yBottom], [xc + fb / 2, yBottom], [xc + rb, yb],
+      [xc + sw / 2, yb + rb - sw / 2], [xc - sw / 2, yb + rb - sw / 2], [xc - rb, yb],
+    ]);
+    const neck = rect(xc - sw / 2, yb, xc + sw / 2, ya0 + eps);
+    armSnaps.push(bulb, neck);
+    baseParts.push(poly([
+      [xc - (s.wf / 2 - s.flare) - eps, s.yHead - s.flare - eps], [xc + (s.wf / 2 - s.flare) + eps, s.yHead - s.flare - eps],
+      [xc + s.wf / 2, s.yHead], [xc + s.wf / 2, wallTop], [xc - s.wf / 2, wallTop], [xc - s.wf / 2, s.yHead],
+    ]));
+    const around = t(bulb.offset(c, 'Miter', 4));
+    const below = d.gz > c && p.orientation === 'flat' ? d.gz : c; // whole layers under the bulb when flat
+    snapCuts.push(
+      t(CS.hull([around, t(around.translate([0, -(below - c)]))])),
+      rect(xc - sw / 2 - c, yb, xc + sw / 2 + c, wallTop + 1),
+      rect(xc - s.ws / 2, s.ySlot, xc + s.ws / 2, yBottom - below + eps),
+    );
+  }
+  let baseCore = t(t(t(union(baseParts)).intersect(arcDisc(skirt.R0))).subtract(notch));
+  if (snapCuts.length) baseCore = t(baseCore.subtract(union(snapCuts)));
 
   // Arm core: plate (extends over the barrel) + skirt + bump + tab, minus key grooves
   const armParts: CrossSection[] = [
@@ -83,7 +107,7 @@ export function buildClip(K: ManifoldToplevel, S: Scope, p: ClipParams, d: Deriv
     ]);
     armParts.push(t(wedge.subtract(arcDisc(skirt.rIn))));
   }
-  let armCore = union(armParts);
+  let armCore = union([...armParts, ...armSnaps]);
   for (const w of d.walls) {
     if (!w.keyed) continue;
     const g = t(keyShape(w.x0, w.x1).offset(c, 'Miter', 4));

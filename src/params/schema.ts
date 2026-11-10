@@ -43,6 +43,11 @@ export const ClipParamsSchema = z.object({
   armThickness: num(1.6, 10, 3.0, { group: 'body', label: 'Arm thickness', unit: 'mm', step: 0.1 }),
   dividerThickness: num(1.2, 6, 2.0, { group: 'body', label: 'Divider thickness', unit: 'mm', step: 0.1 }),
   endWallThickness: num(1.6, 6, 2.4, { group: 'body', label: 'End wall thickness', unit: 'mm', step: 0.1 }),
+  dividerSnaps: z.boolean().default(true).meta({ group: 'body', label: 'Divider snaps',
+    help: 'Each divider top is a fork that clicks around a bulb under the arm. Narrow channels fall back to a plain key.' }),
+  snapBulb: num(1.6, 5, 2.8, { group: 'body', label: 'Snap bulb width', unit: 'mm', step: 0.1, advanced: true }),
+  snapStem: num(0.8, 3, 1.2, { group: 'body', label: 'Snap neck width', unit: 'mm', step: 0.1, advanced: true,
+    help: 'Grip per side = (bulb − neck)/2 − clearance.' }),
   keyDepth: num(0, 2, 0.8, { group: 'body', label: 'Divider key depth', unit: 'mm', step: 0.1, advanced: true,
     help: 'How far divider tops reach into the arm. Keeps cables in separate channels. 0 = off.' }),
 
@@ -57,7 +62,7 @@ export const ClipParamsSchema = z.object({
     .refine((v) => v % 2 === 1, 'knuckles must be odd'),
 
   // Latch
-  skirtThickness: num(1.2, 4, 1.8, { group: 'latch', label: 'Latch wall thickness', unit: 'mm', step: 0.1 }),
+  skirtThickness: num(1.2, 4, 1.6, { group: 'latch', label: 'Latch wall thickness', unit: 'mm', step: 0.1 }),
   catchDepth: num(0.3, 2, 0.8, { group: 'latch', label: 'Catch depth', unit: 'mm', step: 0.05,
     help: 'Deeper = holds tighter, harder to open.' }),
   catchAngle: num(10, 60, 30, { group: 'latch', label: 'Catch release angle', unit: 'deg', step: 1,

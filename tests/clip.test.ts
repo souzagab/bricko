@@ -54,12 +54,17 @@ async function openingCollisions(input: ClipParamsInput, angles: number[]) {
     const p = parseParams(input);
     const d = derive(p);
     const { base, arm } = buildClip(K, S, p, d);
-    const latchZone = S.t(S.t(K.Manifold.cube([1e3, 1e3, 1e3])).translate([d.walls[d.walls.length - 1]!.x0 - 0.5, -500, -500]));
+    const box = (x0: number, x1: number, y0: number, y1: number) =>
+      S.t(S.t(K.Manifold.cube([x1 - x0, y1 - y0, 1e3])).translate([x0, y0, -500]));
+    const latchZone = box(d.walls[d.walls.length - 1]!.x0 - 0.5, 1e3, -500, 500);
+    const snapZones = d.snaps.map((sn) => box(sn.xc - sn.wf / 2 - 1, sn.xc + sn.wf / 2 + 1, sn.yHead - 1, d.ya0 + 1));
+    const allowed = S.t(K.Manifold.union([latchZone, ...snapZones]));
     return angles.map((deg) => {
       const moved = S.t(S.t(S.t(arm.translate([0, -d.hy, 0])).rotate([0, 0, deg])).translate([0, d.hy, 0]));
       const hit = S.t(K.Manifold.intersection(base, moved));
-      const outsideLatch = S.t(hit.subtract(latchZone)).volume();
-      return { deg, total: hit.volume(), outsideLatch };
+      const outsideLatch = S.t(hit.subtract(allowed)).volume();
+      const inSnaps = snapZones.length ? S.t(hit.intersect(S.t(K.Manifold.union(snapZones)))).volume() : 0;
+      return { deg, total: hit.volume(), outsideLatch, inSnaps, snaps: d.snaps.length };
     });
   } finally {
     S.free();
@@ -67,12 +72,13 @@ async function openingCollisions(input: ClipParamsInput, angles: number[]) {
 }
 
 describe('kinematics', () => {
-  for (const name of ['default', 'usbc', 'bundle', 'slim', 'mixed']) {
-    it(`${name}: arm opens to 150° touching nothing but the latch`, async () => {
+  for (const name of ['default', 'usbc', 'power', 'bundle', 'slim', 'mixed']) {
+    it(`${name}: arm opens to 150° touching nothing but the latch and snaps`, async () => {
       const res = await openingCollisions(PRESETS[name]!.params, [2, 5, 10, 20, 35, 60, 90, 120, 150]);
       for (const r of res) expect(r.outsideLatch, `collision at ${r.deg}°`).toBeLessThan(1e-3);
-      // the latch must actually catch: interference while just opening, then free
+      // latch and snaps must actually catch: interference while just opening, then free
       expect(res[0]!.total).toBeGreaterThan(1e-3);
+      if (res[0]!.snaps > 0) expect(res[0]!.inSnaps, 'snaps do not engage').toBeGreaterThan(1e-3);
       for (const r of res.filter((x) => x.deg >= 35)) expect(r.total, `latch still engaged at ${r.deg}°`).toBeLessThan(1e-3);
     }, 30_000);
   }
@@ -104,6 +110,9 @@ describe('fuzz', () => {
       bottomMode: fc.constantFrom('cavity', 'holes', 'flat'),
       orientation: fc.constantFrom('flat', 'side'),
       layerHeight: fc.constantFrom(0.12, 0.16, 0.2, 0.28),
+      dividerSnaps: fc.boolean(),
+      snapBulb: fc.double({ min: 1.6, max: 5, noNaN: true }),
+      snapStem: fc.double({ min: 0.8, max: 2.5, noNaN: true }),
     });
     await fc.assert(
       fc.asyncProperty(arb, async (input) => {
@@ -126,6 +135,8 @@ describe('fuzz', () => {
       radialClearance: fc.double({ min: 0.2, max: 0.5, noNaN: true }),
       dividerThickness: fc.double({ min: 1.6, max: 3, noNaN: true }),
       keyDepth: fc.double({ min: 0, max: 1.2, noNaN: true }),
+      dividerSnaps: fc.boolean(),
+      snapBulb: fc.double({ min: 2, max: 4, noNaN: true }),
     });
     await fc.assert(
       fc.asyncProperty(arb, async (input) => {

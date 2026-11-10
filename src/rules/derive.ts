@@ -35,6 +35,12 @@ export interface Derived {
   yTop: number; // arm top
   xs: number; // start wall left face
   walls: { x0: number; x1: number; keyed: boolean }[];
+  /**
+   * Divider snaps. A hexagonal bulb (45° faces) hangs from the arm into a fork on
+   * the divider top. Lips above the bulb's widest point hold it. A slot below
+   * lengthens the prongs so they flex without cracking.
+   */
+  snaps: Snap[];
   channels: { x0: number; x1: number }[];
   xe: number; // end wall outer face
   /**
@@ -55,6 +61,21 @@ export interface Derived {
   socketGrid: { xs: number[]; zs: number[] } | null;
   socketDepth: number;
   issues: Issue[];
+}
+
+export interface Snap {
+  xc: number; // divider centre
+  yb: number; // bulb equator
+  rb: number; // bulb half-width
+  sw: number; // neck width
+  fb: number; // bulb bottom flat width
+  yBottom: number; // bulb bottom
+  wf: number; // fork head width
+  ws: number; // slot width
+  ySlot: number; // slot bottom
+  yHead: number; // where the head reaches full width
+  flare: number; // 45° flare height from divider to head
+  grip: number; // overlap per side
 }
 
 const roundUpTo = (v: number, step: number) => Math.ceil(v / step - 1e-9) * step;
@@ -137,7 +158,8 @@ export function derive(p: ClipParams): Derived {
   const wallTop = tb + h;
   const lo = catchDepth + p.elephantFoot + 0.6;
   const hi = wallTop - catchRise - 0.6;
-  const catchY = Math.min(Math.max(wallTop / 2, lo), hi);
+  // Low on the latch wall: a longer flexing section means less strain for the same grip
+  const catchY = Math.min(Math.max(tb + catchDepth + c + 0.2, lo), hi);
   if (hi < lo) issues.push({ level: 'error', param: 'channelHeight', message: 'Clip too short for the latch catch. Raise channel height or lower catch depth.' });
 
   // Lay out walls and channels. The end wall's outer face is an arc about the hinge,
@@ -182,6 +204,43 @@ export function derive(p: ClipParams): Derived {
     const divider = i > 0 && i < walls.length - 1;
     wall.keyed = divider && key > 0 && wall.x1 >= yKey - hy + 0.5 && wall.x1 + c + 0.5 < arcAtGroove;
   });
+
+  // Divider snaps (they replace the key where they fit)
+  const snaps: Snap[] = [];
+  if (p.dividerSnaps) {
+    const rb = p.snapBulb / 2;
+    const sw = Math.min(p.snapStem, 2 * rb - 0.4);
+    const fb = Math.min(2 * rb - 0.4, Math.max(sw, 1.6)); // wide enough to sit over the slot edges
+    const ws = Math.max(0.5, fb - 0.8);
+    const tp = Math.max(minWall, 0.9); // prong thickness
+    const lip = Math.max(minWall, 0.8);
+    const wf = Math.max(td, 2 * (rb + c + tp));
+    const flare = (wf - td) / 2;
+    const yb = wallTop - lip - (rb - sw / 2);
+    const yBottom = yb - (rb - fb / 2);
+    const below = flat ? gz : c;
+    const ySlot = Math.max(yBottom - below - 4, tb + flare + 0.9);
+    const yHead = Math.min(ySlot - 0.4, yBottom - below - 0.4);
+    const grip = rb - sw / 2 - c;
+    walls.forEach((wall, i) => {
+      if (i === 0 || i === walls.length - 1) return;
+      const xc = (wall.x0 + wall.x1) / 2;
+      const left = widths[i - 1]!, right = widths[i]!;
+      const fits =
+        grip > 0.15 &&
+        ySlot <= yBottom - below - 1 && // at least 1 mm of slot so the prongs can flex
+        yHead - flare >= tb + 0.4 - 1e-9 &&
+        Math.min(left, right) >= 4 * flare && // head may narrow a channel mouth by ≤ 25 %
+        wall.x1 >= yb - hy + 0.5 &&
+        xc + wf / 2 + c + 0.5 < arcX(rIn, wallTop + gz);
+      if (!fits) return;
+      wall.keyed = false;
+      snaps.push({ xc, yb, rb, sw, fb, yBottom, wf, ws, ySlot, yHead, flare, grip });
+    });
+    if (snaps.length === 0 && walls.length > 2) {
+      issues.push({ level: 'info', param: 'dividerSnaps', message: 'Channels too narrow or short for divider snaps. Using keys; the end latch holds the clip shut.' });
+    }
+  }
 
   const rOut = rIn + p.skirtThickness;
   const skirt = { R0: xe, rIn, rOut, xTop: arcX(rOut, yTop), xMin: xe - te };
@@ -228,7 +287,7 @@ export function derive(p: ClipParams): Derived {
   }
 
   return {
-    W, Rb, hy, Rc, c, ga, gz, segLen, segments, tb, ta, h, ya0, yTop, xs, walls, channels, xe,
+    W, Rb, hy, Rc, c, ga, gz, segLen, segments, tb, ta, h, ya0, yTop, xs, walls, snaps, channels, xe,
     skirt, catchX, catchY, catchDepth, catchRise, tab, key, armLeft, studGrid, studR,
     socketGrid, socketDepth, issues,
   };

@@ -126,8 +126,13 @@ These defaults are **provisional** until test prints confirm them. Ranges are cl
 ### Design as built (changes from the plan above)
 
 - **Hinge:** no separate pin. Between each pair of knuckles, the knuckle with the lower z has a 45° male cone that sits in a socket in the next one. The socket is the cone shifted by `c·√2` along the axis, which gives an offset of `c` perpendicular to the surface. Because 45° is printable both ways, this works flat or on its side. Every knuckle reaches the bed in flat orientation.
-- **Dividers:** **keyed** (a 45° trapezoid that sits in a groove under the arm) instead of snapping. A round snap bulb would leave the arm's lips starting in mid-air when printed flat. The **end latch is what holds the clip shut.** Keys only go on dividers where the arm lifts more than it slides while opening (`x ≥ y − hy`). Start and end walls never get one, and neither does any divider whose groove would reach the latch arc (on tall clips the arc leans over the last dividers).
-- **Latch:** the end wall's outer face and the arm's latch wall ("skirt") are **arcs centred on the hinge axis**. Opening slides them past each other at constant clearance, and only the 45°/`catchAngle` catch interferes. Fuzz testing found that straight walls jam on short, tall clips.
+- **Dividers: fork snaps (default), keys as fallback.**
+  - **Bulb on the arm:** a hexagonal bulb with 45° faces hangs from the arm into a fork at the divider top. The bulb's flat bottom sits over the fork floor with a whole-layer gap (like a support gap), so it doesn't start printing in mid-air.
+  - **Fork on the divider:** its lips sit above the bulb's widest point. A slot below the bulb gives prongs about 8 mm long to flex. Prongs are 0.9 mm thick, grip is about 0.45 mm per side, strain is about 1%, safe for PLA. The head flares out from the divider at 45°.
+  - **Fallback to a key** (a 45° trapezoid in a groove, alignment only) when the head would narrow a channel mouth by more than 25%, when there is no room for a ≥ 1 mm slot, or near the hinge or the latch arc.
+  - Keys only go where the arm lifts more than it slides while opening (`x ≥ y − hy`). Start and end walls never get a key or a snap.
+  - First design used keys only. The user compared it with the original in OrcaSlicer: the original snaps at every divider and has an end hook. Keys alone left a single latch holding the clip shut.
+- **Latch:** sits low on the latch wall (just above the base plate), so the flexing section is longer and strain is lower for the same grip. The end wall's outer face and the arm's latch wall ("skirt") are **arcs centred on the hinge axis**. Opening slides them past each other at constant clearance, and only the 45°/`catchAngle` catch interferes. Fuzz testing found that straight walls jam on short, tall clips.
 - **First layer:** the first layer of each body is replaced by its footprint (the intersection of slices at 5% and 99.9% of the layer) shrunk by `elephantFoot`. This is generic and works in both orientations.
 - **Clamps (reported as info):**
   - Barrel: barrel top + clearance must stay below the arm.
