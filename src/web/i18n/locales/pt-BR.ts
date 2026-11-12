@@ -42,7 +42,7 @@ const locale: Translation = {
     'error.invalid': 'Valor inválido: {field}',
     'error.loading': 'Ainda carregando. Tente de novo em um instante.',
     'error.testPrint': 'Não foi possível gerar o teste de encaixe.',
-    'issues.selfCheck': 'A autoverificação falhou: {detail}. Por favor, avise-nos desta combinação.',
+    'issues.selfCheck': 'A autoverificação falhou: {detail}. Por favor, avise-nos sobre esta combinação.',
 
     'cables.title': 'Seus cabos',
     'cables.cable': 'Cabo {n}',
@@ -75,8 +75,8 @@ const locale: Translation = {
     'hinge.standard': 'Padrão',
     'hinge.looser': 'Mais folgado',
     'hinge.custom': 'Folga personalizada: {mm} mm (definida em Avançado).',
-    'hinge.hint': 'A dobradiça travou depois de imprimir? Escolha <em>Mais folgado</em>. Ficou bamba? <em>Mais justo</em>.',
-    'hinge.fitTest': 'Imprimir antes um teste de encaixe →',
+    'hinge.hint': 'A dobradiça grudou na impressão? Escolha <em>Mais folgado</em>. Ficou bamba? <em>Mais justo</em>.',
+    'hinge.fitTest': 'Imprimir um teste de encaixe antes →',
 
     'adv.title': 'Configurações avançadas',
     'adv.blurb': 'Medidas exatas, dobradiça, trava, encaixe nos blocos, impressora',
@@ -100,8 +100,8 @@ const locale: Translation = {
     'guide.2': '<b>Sem suportes, sem montagem.</b> A dobradiça já sai unida da impressora. Pode usar brim se a mesa estiver escorregadia.',
     'guide.3': '<b>PETG ou PLA+</b> funcionam melhor. PLA comum também serve.',
     'guide.4': 'Quando terminar, abra a tampa uma vez, com cuidado, para soltar a dobradiça.',
-    'guide.5': '<b>A dobradiça travou?</b> Escolha <em>Mais folgado</em> em Ajuste da dobradiça e imprima de novo. <b>Ficou bamba?</b> Escolha <em>Mais justo</em>.',
-    'guide.6': '<b>Primeiro clipe?</b> Imprima o teste de encaixe (Ajuste da dobradiça → <em>Imprimir antes um teste de encaixe</em>). Ele mostra as melhores configurações para a sua impressora.',
+    'guide.5': '<b>A dobradiça grudou?</b> Escolha <em>Mais folgado</em> em Ajuste da dobradiça e imprima de novo. <b>Ficou bamba?</b> Escolha <em>Mais justo</em>.',
+    'guide.6': '<b>Primeiro clipe?</b> Imprima o teste de encaixe (Ajuste da dobradiça → <em>Imprimir um teste de encaixe antes</em>). Ele mostra as melhores configurações para a sua impressora.',
 
     'test.title': 'Descubra o melhor ajuste para a sua impressora',
     'test.close': 'Fechar',
@@ -176,7 +176,7 @@ const locale: Translation = {
     studDiameter: { label: 'Ø do pino' },
     studHeight: { label: 'Altura do pino' },
     studFlare: { label: 'Conicidade do pino', help: 'Afunila os pinos de Ø−valor na raiz até Ø+valor perto da ponta, para um encaixe mais firme. Os pinos padrão são retos (0).' },
-    studUndercut: { label: 'Ângulo de baixo do pino', help: 'Achata o lado de baixo de cada pino impresso de lado, para imprimir sem suporte. 0 = desligado.' },
+    studUndercut: { label: 'Ângulo inferior do pino', help: 'Achata o lado de baixo de cada pino impresso de lado, para imprimir sem suporte. 0 = desligado.' },
     studFit: { label: 'Ajuste do pino', help: 'Somado ao Ø do pino. Use o teste de encaixe para descobrir o seu valor.' },
 
     bottomMode: { label: 'Parte de baixo', help: 'pockets: encaixa sobre blocos e placas de base.' },
@@ -190,7 +190,7 @@ const locale: Translation = {
   },
 
   issues: {
-    clearanceLow: 'Abaixo de 0,2 mm a dobradiça pode sair grudada em muitas impressoras. Imprima antes o teste de encaixe.',
+    clearanceLow: 'Abaixo de 0,2 mm a dobradiça pode sair grudada em muitas impressoras. Imprima o teste de encaixe antes.',
     barrelClamped: 'Cilindro limitado a Ø{d} mm para caber na altura do clipe.',
     pinClamped: 'Eixo limitado a Ø{d} mm para sobrar uma parede em volta dele.',
     barrelTooSmall: 'Cilindro pequeno demais para um eixo.',
@@ -206,7 +206,7 @@ const locale: Translation = {
     snapShallow: 'Clique raso demais para prender. Aumente a profundidade do clique ou o tamanho da esfera.',
     widthsIgnored: 'Larguras por canal ignoradas: a quantidade não corresponde.',
     dividerNearHinge: 'A divisória em {x} mm está perto da dobradiça e pode raspar ao abrir.',
-    baseTooThin: 'Base fina demais para encaixes com profundidade total: os blocos não vão assentar por completo.',
+    baseTooThin: 'Base fina demais para encaixes com profundidade total: os blocos não vão encaixar até o fim.',
     thinWall: 'Abaixo de 2 × o bico ({mm} mm).',
   },
 };

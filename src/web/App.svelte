@@ -509,8 +509,10 @@
   .bar .toast { left: 10px; right: 10px; bottom: calc(100% + 10px); width: auto; transform: none; animation-name: rise; padding: 10px 12px; gap: 8px; }
   .bar .toast .dismiss { display: block; flex: none; }
   /* Longer languages on small phones: wrap instead of pushing things off the screen */
-  .bar .toast span { min-width: 0; }
-  .bar .toast .tips { white-space: normal; min-width: 0; flex-shrink: 1; }
+  /* message and close on one line, the tips button under them: reads well at any phone width and in any language */
+  .bar .toast { display: grid; grid-template-columns: 1fr auto; align-items: start; }
+  .bar .toast .dismiss { grid-column: 2; grid-row: 1; margin: -6px -6px 0 0; }
+  .bar .toast .tips { grid-column: 1 / -1; justify-self: start; }
   .bar .primary { white-space: normal; line-height: 1.15; min-width: 0; }
   .hud { flex-wrap: wrap-reverse; row-gap: 6px; }
   .app:not(.desk) .seg { min-width: 0; }
