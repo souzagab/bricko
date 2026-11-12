@@ -25,6 +25,8 @@ Not sure about your printer? **Print a fit test**: five mini clips, each a littl
 
 Your design lives in the URL, so **Share** gives you a link that rebuilds it exactly.
 
+It works on phones and tablets too, and comes up in English or Português (Brasil) to match your browser (or add `?lang=pt-BR` to a link).
+
 > Status: website and geometry engine working, waiting on the first physical prints. Feedback is welcome in [issues](https://github.com/souzagab/bricko/issues).
 
 ## Development
@@ -64,6 +66,7 @@ Requires Node ≥ 23.6, which runs TypeScript directly.
 | [docs/PLAN.md](docs/PLAN.md) | Decisions, architecture, parameter set, validation rules, tests and milestones |
 | [docs/GEOMETRY.md](docs/GEOMETRY.md) | Brick dimensions (with derivations), FDM design rules and print orientation |
 | [docs/RESEARCH.md](docs/RESEARCH.md) | Research findings, with sources |
+| [docs/TRANSLATING.md](docs/TRANSLATING.md) | Fix a translation or add a language |
 
 ## License
 

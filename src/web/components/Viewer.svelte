@@ -18,8 +18,14 @@
     resetToken: number;
     /** cables to draw lying in the channels (bed frame), desk view only */
     cables?: { x: number; y: number; r: number }[];
+    /** px of the canvas covered by other UI at the top and bottom: the clip is framed in what is left */
+    inset?: { top: number; bottom: number };
+    /** small screens: fill the view with the clip as it is posed now, instead of leaving room for its whole range of motion */
+    tight?: boolean;
+    /** what a screen reader says the canvas is */
+    label: string;
   }
-  let { meshes, axis, width, mode, angle, section, dark, resetToken, cables = [] }: Props = $props();
+  let { meshes, axis, width, mode, angle, section, dark, resetToken, cables = [], inset = { top: 0, bottom: 0 }, tight = false, label }: Props = $props();
 
   let host: HTMLDivElement;
   let renderer: THREE.WebGLRenderer;
@@ -40,10 +46,21 @@
   let armMesh: THREE.Mesh | null = null;
   let fitted = false;
   let userMoved = false; // stop auto-framing once the user has moved the camera
+  let interacting = false; // a finger or mouse button is down on the canvas
+  let framing = false; // the camera is being moved by us, not by the user
   let fittedSize = 0;
+  let motionBox: THREE.Box3 | null = null; // the clip closed and opened, as placed on the ground
   let needsRender = true;
   let raf = 0;
   const requestRender = () => { needsRender = true; };
+
+  // Plain copies of the framing props, so the helpers below can run inside any effect without subscribing it to them
+  let padTop = 0, padBottom = 0, tightFit = false;
+  const VIEW_DIR = new THREE.Vector3(0.55, 0.62, 0.9).normalize(); // from the clip towards the camera
+  const VIEW_RIGHT = new THREE.Vector3().crossVectors(THREE.Object3D.DEFAULT_UP, VIEW_DIR).normalize();
+  const VIEW_UP = new THREE.Vector3().crossVectors(VIEW_DIR, VIEW_RIGHT);
+  const MIN_VISIBLE = 80; // px. With less than this showing, the preview is covered: keep the framing it had
+  const corner = new THREE.Vector3();
 
   function toGeometry(m: MeshLike): THREE.BufferGeometry {
     const n = m.numProp;
@@ -138,20 +155,91 @@
     sun.position.set(r * 1.2, r * 2.4, r * 1.6);
   }
 
-  function fitCamera(box: THREE.Box3) {
-    const c = box.getCenter(new THREE.Vector3());
-    const r = box.getSize(new THREE.Vector3()).length() / 2;
-    // fit the bounding sphere in whichever of the two fields of view is narrower (portrait phones)
-    const vHalf = THREE.MathUtils.degToRad(camera.fov / 2);
-    const hHalf = Math.atan(Math.tan(vHalf) * camera.aspect);
-    const dist = (r / Math.sin(Math.min(vHalf, hHalf))) * 1.02;
-    fittedSize = r;
-    const dir = new THREE.Vector3(0.55, 0.62, 0.9).normalize();
-    camera.position.copy(c).addScaledVector(dir, dist);
+  /** Height of the canvas that no other UI is covering. */
+  const visibleHeight = () => host.clientHeight - padTop - padBottom;
+
+  /** Shift the picture so that whatever the camera looks at sits in the middle of the uncovered area. */
+  function applyInsets() {
+    const w = host.clientWidth, h = host.clientHeight;
+    if (!w || !h || visibleHeight() < MIN_VISIBLE) return;
+    const down = (padTop - padBottom) / 2;
+    if (down) camera.setViewOffset(w, h, 0, -down, w, h);
+    else camera.clearViewOffset();
+  }
+
+  /**
+   * What is on screen right now, as points: the corners of each part's own box, where the part is posed
+   * (the lid at its current angle, the cables when they are drawn). Following the parts like this hugs
+   * an open clip far better than one big box around everything, and is cheap enough for every frame.
+   */
+  function posePoints(): THREE.Vector3[] {
+    root.updateMatrixWorld(true);
+    const parts = [baseMesh, armMesh, ...(cableGroup.visible ? (cableGroup.children as THREE.Mesh[]) : [])];
+    const pts: THREE.Vector3[] = [];
+    for (const m of parts) {
+      if (!m) continue;
+      const b = m.geometry.boundingBox ?? (m.geometry.computeBoundingBox(), m.geometry.boundingBox!);
+      for (let i = 0; i < 8; i++) {
+        pts.push(new THREE.Vector3(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).applyMatrix4(m.matrixWorld));
+      }
+    }
+    return pts;
+  }
+
+  /** Point the camera at the clip from the standard angle, at the distance that fits it in the uncovered area. */
+  function frame() {
+    const w = host.clientWidth, h = host.clientHeight, vis = visibleHeight();
+    if (!motionBox || !w || vis < MIN_VISIBLE) return;
+    const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const c = new THREE.Vector3();
+    let dist = 0;
+    if (tightFit) {
+      // Every point of the posed clip inside the uncovered rectangle, and centred in it: fills a phone screen either way up
+      const pts = posePoints();
+      if (!pts.length) return;
+      new THREE.Box3().setFromPoints(pts).getCenter(c);
+      const focal = h / (2 * tanV); // px
+      for (let pass = 0; pass < 3; pass++) {
+        // the nearest the camera can be with every point still in the rectangle...
+        dist = 0;
+        for (const p of pts) {
+          corner.copy(p).sub(c);
+          const near = corner.dot(VIEW_DIR);
+          dist = Math.max(dist, near + (focal * Math.abs(corner.dot(VIEW_RIGHT))) / (w / 2), near + (focal * Math.abs(corner.dot(VIEW_UP))) / (vis / 2));
+        }
+        // ...then slide the target to the middle of what that draws, and go again
+        let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+        for (const p of pts) {
+          corner.copy(p).sub(c);
+          const k = 1 / (dist - corner.dot(VIEW_DIR));
+          const x = corner.dot(VIEW_RIGHT) * k, y = corner.dot(VIEW_UP) * k;
+          x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+        }
+        c.addScaledVector(VIEW_RIGHT, ((x0 + x1) / 2) * dist).addScaledVector(VIEW_UP, ((y0 + y1) / 2) * dist);
+      }
+      dist *= 1.1;
+    } else {
+      // The bounding sphere of the whole range of motion, in whichever of the two fields of view is narrower
+      motionBox.getCenter(c);
+      const r = motionBox.getSize(new THREE.Vector3()).length() / 2;
+      dist = (r / Math.sin(Math.min(Math.atan(tanV * (vis / h)), Math.atan(tanV * (w / h))))) * 1.02;
+    }
+    fittedSize = motionBox.getSize(new THREE.Vector3()).length() / 2;
+    framing = true;
+    camera.position.copy(c).addScaledVector(VIEW_DIR, dist);
     camera.near = dist / 100; camera.far = dist * 20;
     camera.updateProjectionMatrix();
     controls.target.copy(c);
+    controls.minDistance = dist * 0.3; // a pinch can't end up inside the clip or lose it in the distance
+    controls.maxDistance = dist * 4;
     controls.update();
+    framing = false;
+  }
+
+  function resetView() {
+    userMoved = false;
+    frame();
+    requestRender();
   }
 
   function updateClip() {
@@ -171,6 +259,8 @@
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    applyInsets();
+    if (fitted && !userMoved) frame(); // a turned phone or a resized window gets the clip framed again
     requestRender();
   }
 
@@ -202,8 +292,31 @@
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.12;
-    controls.addEventListener('change', requestRender);
-    controls.addEventListener('start', () => { userMoved = true; });
+    // Only a camera that actually moved under a finger counts: a stray tap on the canvas must not switch auto-framing off
+    controls.addEventListener('start', () => { interacting = true; });
+    controls.addEventListener('end', () => { interacting = false; });
+    controls.addEventListener('change', () => {
+      if (interacting && !framing) userMoved = true;
+      requestRender();
+    });
+
+    // Double-tap (or double-click) puts the view back
+    const el = renderer.domElement;
+    let downT = 0, downX = 0, downY = 0, tapT = 0, tapX = 0, tapY = 0;
+    const onDown = (e: PointerEvent) => {
+      if (!e.isPrimary) { downT = tapT = 0; return; } // a second finger: that's a pinch
+      downT = e.timeStamp; downX = e.clientX; downY = e.clientY;
+    };
+    const onUp = (e: PointerEvent) => {
+      if (!e.isPrimary || !downT) return;
+      const tap = e.timeStamp - downT < 300 && Math.hypot(e.clientX - downX, e.clientY - downY) < 10;
+      downT = 0;
+      if (!tap) { tapT = 0; return; }
+      if (e.timeStamp - tapT < 350 && Math.hypot(e.clientX - tapX, e.clientY - tapY) < 30) { tapT = 0; resetView(); }
+      else { tapT = e.timeStamp; tapX = e.clientX; tapY = e.clientY; }
+    };
+    el.addEventListener('pointerdown', onDown);
+    el.addEventListener('pointerup', onUp);
 
     const ro = new ResizeObserver(resize);
     ro.observe(host);
@@ -220,9 +333,20 @@
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      el.removeEventListener('pointerdown', onDown);
+      el.removeEventListener('pointerup', onUp);
       controls.dispose();
       renderer.dispose();
     };
+  });
+
+  // Covered area or framing style changed (a settings sheet being dragged, a turned phone)
+  $effect(() => {
+    padTop = inset.top; padBottom = inset.bottom; tightFit = tight;
+    if (!renderer) return;
+    applyInsets();
+    if (fitted && !userMoved) frame();
+    requestRender();
   });
 
   // New geometry
@@ -230,12 +354,12 @@
     void meshes; void axis;
     if (!renderer) return;
     replaceMeshes();
-    const box = placeRoot();
-    if (box) {
-      updateGround(box);
-      const r = box.getSize(new THREE.Vector3()).length() / 2;
+    motionBox = placeRoot();
+    if (motionBox) {
+      updateGround(motionBox);
+      const r = motionBox.getSize(new THREE.Vector3()).length() / 2;
       const bigChange = fittedSize > 0 && (r > fittedSize * 1.25 || r < fittedSize * 0.6);
-      if (!fitted || !userMoved || bigChange) { fitCamera(box); fitted = true; }
+      if (!fitted || !userMoved || bigChange) { frame(); fitted = true; }
     }
     updateClip();
     requestRender();
@@ -246,8 +370,8 @@
     void mode; void resetToken; void dark;
     if (!renderer) return;
     userMoved = false;
-    const box = placeRoot();
-    if (box) { updateGround(box); fitCamera(box); }
+    motionBox = placeRoot();
+    if (motionBox) { updateGround(motionBox); frame(); }
     updateClip();
     requestRender();
   });
@@ -257,12 +381,14 @@
     void cables; void width; void mode;
     if (!renderer) return;
     replaceCables();
+    if (tightFit && fitted && !userMoved) frame(); // they are part of the picture
     requestRender();
   });
 
   // Opening angle
   $effect(() => {
     armPivot.rotation.z = THREE.MathUtils.degToRad(angle);
+    if (renderer && tightFit && fitted && !userMoved) frame(); // follow the lid
     requestRender();
   });
 
@@ -275,7 +401,7 @@
   });
 </script>
 
-<div class="viewer" bind:this={host} aria-label="3D preview of the clip. Drag to rotate, scroll to zoom." role="img"></div>
+<div class="viewer" bind:this={host} aria-label={label} role="img"></div>
 
 <style>
   .viewer { position: absolute; inset: 0; touch-action: none; }

@@ -2,6 +2,7 @@
   import type { Issue } from '../../rules/derive.ts';
   import { FIELD_BY_KEY } from '../lib/fields.ts';
   import { app } from '../lib/state.svelte.ts';
+  import { issueText, paramLabel, t } from '../i18n/index.svelte.ts';
 
   let { issues, failures }: { issues: Issue[]; failures: string[] } = $props();
   const order = { error: 0, warning: 1, info: 2 } as const;
@@ -12,16 +13,16 @@
 {#if sorted.length || failures.length}
   <ul class="issues" aria-live="polite">
     {#each failures as f, i (i)}
-      <li class="error"><span class="ic">✕</span><span>Self-check failed: {f}. Please report this combination.</span></li>
+      <li class="error"><span class="ic">✕</span><span>{t('issues.selfCheck', { detail: f })}</span></li>
     {/each}
     {#each sorted as i, k (k)}
       <li class={i.level}>
         <span class="ic">{icon[i.level]}</span>
         <span>
           {#if i.param && FIELD_BY_KEY[i.param]}
-            <button type="button" onclick={() => (app.focusKey = i.param ?? null)}>{FIELD_BY_KEY[i.param].label}</button>:
+            <button type="button" onclick={() => (app.focusKey = i.param ?? null)}>{paramLabel(i.param)}</button>:
           {/if}
-          {i.message}
+          {issueText(i)}
         </span>
       </li>
     {/each}
@@ -38,4 +39,8 @@
   .ic { color: inherit; }
   .error .ic, .warning .ic, .info .ic { background: none; border: 1.5px solid currentColor; }
   button { border: 0; background: none; padding: 0; font: inherit; font-weight: 650; color: inherit; text-decoration: underline; cursor: pointer; }
+  /* a taller target for a finger, without moving the text around it */
+  @media (pointer: coarse), (max-width: 699.98px) {
+    button { padding: 10px 0; margin: -10px 0; }
+  }
 </style>

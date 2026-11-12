@@ -2,10 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- viewport-fit=cover: draw under notches (the CSS pads with safe-area insets).
+         interactive-widget=resizes-content: the on-screen keyboard shrinks the layout, so the preview and the Download bar stay in view while typing. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>Bricko · Brick-compatible cable clip generator</title>
     <meta name="description" content="Design a print-in-place, brick-compatible cable clip in your browser and download the STL. Free and open source." />
-    <meta name="theme-color" content="#f2b233" />
+    <meta name="theme-color" content="#f2b233" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1d2026" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
   </head>
   <body>

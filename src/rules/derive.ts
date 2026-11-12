@@ -3,10 +3,41 @@ import type { ClipParams } from '../params/schema.ts';
 /** Real-brick constants: what our pockets must accept, whatever the user sets for our studs. */
 export const BRICK = { studDiameter: 4.8, spineHalf: 0.95 } as const;
 
+/**
+ * Every note the rules can raise, in English. An Issue's `message` is built from this table (the CLI
+ * prints it). The website translates from `code` and `args` instead, so the English lives only here.
+ */
+export const ISSUE_TEXT = {
+  clearanceLow: () => 'Under 0.2 mm the hinge may fuse on many printers. Print the test piece first.',
+  barrelClamped: (a: { d: number }) => `Barrel clamped to Ø${a.d.toFixed(2)} mm to fit the clip height.`,
+  pinClamped: (a: { d: number }) => `Pin clamped to Ø${a.d.toFixed(2)} mm to leave a wall around it.`,
+  barrelTooSmall: () => 'Barrel too small for a pin.',
+  clipTooNarrow: () => 'Clip too narrow for the hinge. Use a wider clip or a smaller barrel.',
+  knuckleShortened: (a: { mm: number }) => `Middle knuckle shortened to ${a.mm.toFixed(1)} mm.`,
+  hookShortened: (a: { mm: number }) => `Hook shortened to ${a.mm.toFixed(2)} mm to fit the channel height.`,
+  catchReduced: (a: { mm: number }) => `Catch overlap reduced to ${a.mm.toFixed(2)} mm.`,
+  channelsTooShort: () => 'Channels too short for the latch hook. Raise the channel height.',
+  ballReduced: (a: { d: number }) => `Ball reduced to Ø${a.d.toFixed(2)} mm to keep the channel mouths open.`,
+  ballTooSmall: () => 'Ball smaller than the divider: using a straight divider.',
+  ballNoRoom: () => 'Channels too short for divider balls.',
+  snapNeedsBall: () => 'Snap dividers need a ball. Using keys.',
+  snapShallow: () => 'Snap too shallow to click. Increase snap depth or ball size.',
+  widthsIgnored: () => 'Per-channel widths ignored: count does not match.',
+  dividerNearHinge: (a: { x: number }) => `Divider at ${a.x.toFixed(1)} mm is close to the hinge and may rub when opening.`,
+  baseTooThin: () => 'Base too thin for full-depth sockets: bricks will not seat fully.',
+  thinWall: (a: { mm: number }) => `Under 2 × nozzle (${a.mm.toFixed(1)} mm).`,
+} as const;
+export type IssueCode = keyof typeof ISSUE_TEXT;
+
 export interface Issue {
   level: 'error' | 'warning' | 'info';
   param?: keyof ClipParams;
+  /** English, for the CLI and logs */
   message: string;
+  /** what was found, without the wording */
+  code: IssueCode;
+  /** the numbers that go into the wording (mm) */
+  args: Record<string, number>;
 }
 
 export type Zone = { kind: 'arm' | 'mid'; z0: number; z1: number };
@@ -55,7 +86,10 @@ function grid(lo: number, hi: number, pitch: number, play: number): number[] {
 
 export function derive(p: ClipParams): Derived {
   const issues: Issue[] = [];
-  const info = (param: keyof ClipParams, message: string) => issues.push({ level: 'info', param, message });
+  const note = <K extends IssueCode>(level: Issue['level'], param: keyof ClipParams | undefined, code: K, ...args: Parameters<(typeof ISSUE_TEXT)[K]>) => {
+    const a: Record<string, number> = args[0] ?? {};
+    issues.push({ level, ...(param ? { param } : {}), message: (ISSUE_TEXT[code] as (a: Record<string, number>) => string)(a), code, args: a });
+  };
   const P = p.studPitch;
   const play = p.brickPlay;
   const minWall = 2 * p.nozzle;
@@ -66,7 +100,7 @@ export function derive(p: ClipParams): Derived {
   const c = p.clearance;
   const cArc = c + 0.1;
   const gzL = roundUpTo(Math.max(c, p.layerHeight), p.layerHeight);
-  if (c < 0.2) issues.push({ level: 'warning', param: 'clearance', message: 'Under 0.2 mm the hinge may fuse on many printers. Print the test piece first.' });
+  if (c < 0.2) note('warning', 'clearance', 'clearanceLow');
 
   // Heights
   const tb = p.baseThickness;
@@ -79,12 +113,12 @@ export function derive(p: ClipParams): Derived {
   // Hinge radii
   let Rb = p.barrelDiameter / 2;
   const maxRb = Math.min(yTop - hy - cArc - minWall, hy - 0.2);
-  if (Rb > maxRb) { Rb = maxRb; info('barrelDiameter', `Barrel clamped to Ø${(2 * Rb).toFixed(2)} mm to fit the clip height.`); }
+  if (Rb > maxRb) { Rb = maxRb; note('info', 'barrelDiameter', 'barrelClamped', { d: 2 * Rb }); }
   const Ra = Rb;
   let rp = p.pinDiameter / 2;
   const maxRp = Ra - c - minWall;
-  if (rp > maxRp) { rp = maxRp; info('pinDiameter', `Pin clamped to Ø${(2 * rp).toFixed(2)} mm to leave a wall around it.`); }
-  if (rp < 0.8) issues.push({ level: 'error', param: 'barrelDiameter', message: 'Barrel too small for a pin.' });
+  if (rp > maxRp) { rp = maxRp; note('info', 'pinDiameter', 'pinClamped', { d: 2 * rp }); }
+  if (rp < 0.8) note('error', 'barrelDiameter', 'barrelTooSmall');
   const step = Math.max(0, Math.min(p.coneStep, Rb - 0.3 - rp));
   const rCone = rp + step;
   const Lc = Rb - rCone; // 45° cone length
@@ -93,8 +127,8 @@ export function derive(p: ClipParams): Derived {
   const armMin = 1.5;
   const maxLb = W - 2 * (Lc + gzL + armMin);
   let Lb = p.middleKnuckle;
-  if (maxLb < 1.2) issues.push({ level: 'error', param: 'studsAcross', message: 'Clip too narrow for the hinge. Use a wider clip or a smaller barrel.' });
-  if (Lb > maxLb) { Lb = Math.max(1.2, maxLb); info('middleKnuckle', `Middle knuckle shortened to ${Lb.toFixed(1)} mm.`); }
+  if (maxLb < 1.2) note('error', 'studsAcross', 'clipTooNarrow');
+  if (Lb > maxLb) { Lb = Math.max(1.2, maxLb); note('info', 'middleKnuckle', 'knuckleShortened', { mm: Lb }); }
   const zones: Zone[] = [
     { kind: 'arm', z0: 0, z1: zMid - Lb / 2 },
     { kind: 'mid', z0: zMid - Lb / 2, z1: zMid + Lb / 2 },
@@ -111,10 +145,10 @@ export function derive(p: ClipParams): Derived {
   let hookOver = p.hookOverhang;
   const rampLimit = ya0 - c - 0.2;
   const maxHook = rampLimit - (yLedge + hh) - 0.3;
-  if (hookOver > maxHook) { hookOver = maxHook; info('hookOverhang', `Hook shortened to ${Math.max(0, hookOver).toFixed(2)} mm to fit the channel height.`); }
+  if (hookOver > maxHook) { hookOver = maxHook; note('info', 'hookOverhang', 'hookShortened', { mm: Math.max(0, hookOver) }); }
   const overlap = Math.min(p.catchOverlap, hookOver - 0.3);
-  if (overlap < p.catchOverlap) info('catchOverlap', `Catch overlap reduced to ${Math.max(0, overlap).toFixed(2)} mm.`);
-  if (hookOver < 0.8 || overlap < 0.3) issues.push({ level: 'error', param: 'channelHeight', message: 'Channels too short for the latch hook. Raise the channel height.' });
+  if (overlap < p.catchOverlap) note('info', 'catchOverlap', 'catchReduced', { mm: Math.max(0, overlap) });
+  if (hookOver < 0.8 || overlap < 0.3) note('error', 'channelHeight', 'channelsTooShort');
   const rampTopY = yLedge + hh + hookOver + 0.3;
   const tt = p.tongueThickness;
   const yU = Math.max(tb + 0.26 * h, tb + c + 0.3);
@@ -127,22 +161,22 @@ export function derive(p: ClipParams): Derived {
   // A ball may narrow each neighbouring channel mouth by at most 25 %
   const narrowest = Math.min(...(p.channelWidths && p.channelWidths.length === p.channelCount ? p.channelWidths : [p.channelWidth]));
   const maxBall = domeR + 0.25 * narrowest;
-  if (rBall > maxBall) { rBall = maxBall; info('ballDiameter', `Ball reduced to Ø${(2 * rBall).toFixed(2)} mm to keep the channel mouths open.`); }
-  if (rBall > 0 && rBall < domeR + 0.1) { rBall = 0; info('ballDiameter', 'Ball smaller than the divider: using a straight divider.'); }
+  if (rBall > maxBall) { rBall = maxBall; note('info', 'ballDiameter', 'ballReduced', { d: 2 * rBall }); }
+  if (rBall > 0 && rBall < domeR + 0.1) { rBall = 0; note('info', 'ballDiameter', 'ballTooSmall'); }
   let yBall = rBall > 0 ? domeC - Math.max(rBall * 0.91, domeR + 0.3) : domeC;
   if (rBall > 0 && yBall - rBall < tb + 0.5) {
     yBall = tb + 0.5 + rBall;
-    if (yBall > domeC) { rBall = 0; yBall = domeC; info('ballDiameter', 'Channels too short for divider balls.'); }
+    if (yBall > domeC) { rBall = 0; yBall = domeC; note('info', 'ballDiameter', 'ballNoRoom'); }
   }
   const snap = p.dividerSnap && rBall > 0;
-  if (p.dividerSnap && !snap) info('dividerSnap', 'Snap dividers need a ball. Using keys.');
+  if (p.dividerSnap && !snap) note('info', 'dividerSnap', 'snapNeedsBall');
   let yLip: number, lipTip: number, grip = 0;
   if (snap) {
     yLip = Math.max(yBall - p.snapDepth, tb + 1);
     const inner = Math.max(Math.sqrt(Math.max(0, (rBall + c) ** 2 - (yBall - yLip) ** 2)), domeR + c);
     grip = rBall - inner;
     lipTip = inner + Math.max(0.6, 0.75 * minWall);
-    if (grip < 0.1) issues.push({ level: 'warning', param: 'snapDepth', message: 'Snap too shallow to click. Increase snap depth or ball size.' });
+    if (grip < 0.1) note('warning', 'snapDepth', 'snapShallow');
   } else {
     yLip = rBall > 0 ? yBall + rBall * 0.72 : domeC;
     lipTip = (rBall > 0 ? rBall : domeR) + c;
@@ -153,7 +187,7 @@ export function derive(p: ClipParams): Derived {
     ? p.channelWidths
     : Array.from({ length: p.channelCount }, () => p.channelWidth);
   if (p.channelWidths && p.channelWidths.length !== p.channelCount) {
-    issues.push({ level: 'warning', param: 'channelWidths', message: 'Per-channel widths ignored: count does not match.' });
+    note('warning', 'channelWidths', 'widthsIgnored');
   }
   const layout = (extra: number) => {
     const channels: Derived['channels'] = [];
@@ -192,7 +226,7 @@ export function derive(p: ClipParams): Derived {
 
   // Dividers too close to the hinge can't lift straight off their key
   for (const xc of dividers) {
-    if (xc < 2 * (yLip - hy) + Rb) issues.push({ level: 'warning', message: `Divider at ${xc.toFixed(1)} mm is close to the hinge and may rub when opening.` });
+    if (xc < 2 * (yLip - hy) + Rb) note('warning', undefined, 'dividerNearHinge', { x: xc });
   }
 
   // ---- Studs ----
@@ -209,14 +243,14 @@ export function derive(p: ClipParams): Derived {
   let pockets: Derived['pockets'] = null;
   if (p.bottomMode === 'pockets') {
     const depth = Math.min(p.socketDepth, tb - 0.6);
-    if (depth < 1.7) issues.push({ level: 'warning', param: 'baseThickness', message: 'Base too thin for full-depth sockets: bricks will not seat fully.' });
+    if (depth < 1.7) note('warning', 'baseThickness', 'baseTooThin');
     const xs = grid(xPlate0, xEnd, P, play);
     if (xs.length) pockets = { xs, zs, D: BRICK.studDiameter, fit: p.socketFit, depth };
   }
 
   // Thin walls
   for (const [k, v] of [['dividerThickness', td], ['tongueThickness', tt], ['armThickness', ta], ['postThickness', p.postThickness]] as const) {
-    if (v < minWall) issues.push({ level: 'warning', param: k, message: `Under 2 × nozzle (${minWall.toFixed(1)} mm).` });
+    if (v < minWall) note('warning', k, 'thinWall', { mm: minWall });
   }
 
   return {

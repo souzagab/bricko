@@ -188,7 +188,22 @@ These defaults are **provisional** until test prints confirm them. Ranges are cl
 - **Downloads:**
   - file names describe the cables, e.g. `bricko_phone-phone-power_2wide.stl`
   - a toast after download says how to print it
-  - on phones, a sticky Download button sits inside the settings sheet
+  - on phones, Share and Download sit in a bar that is always on screen (see *Phones and tablets*)
 - **Share links** store the cable list (`cables=phone,phone,power`), not channel sizes. Older channel-width links are converted to custom cables.
 - **Standard brick sizes** are the defaults: 8.0 mm pitch, 4.8 mm studs, 1.7 mm tall and straight (no flare), 3.2 mm plates for base and lid, 0.2 mm play, 2.0 mm socket depth.
 - **Wording:** the site and README no longer mention any brand or earlier design.
+
+### Phones and tablets (2026-11-12)
+
+- **Three layouts**, picked from the window (`App.svelte`): `desk` (unchanged), `side` (phones on their side, small tablets: settings column with its own Download bar, preview at full height) and `sheet` (phones held upright).
+- **Sheet:** the preview fills the screen and the settings are a sheet over it with three stops (handle only / half / full). Drag the handle, tap it, or use the arrow keys. The clip stays visible while you change it, which the old full-height sheet hid.
+- **Viewer:** told how much of the canvas is covered, it frames the clip in what is left and follows the lid as it opens. Zoom is limited so a pinch can't lose the clip, double-tap resets the view, a stray tap no longer switches auto-framing off, and a turned phone is re-framed.
+- **Touch:** everything pressable is at least 44 px and form fields are 16 px (no iOS zoom-on-focus), via two tokens in `app.css` (`--tap`, `--field-font`) that only apply on coarse pointers and phone-sized windows. Thumb-sized sliders, press feedback, hover styles only where there is hover, safe-area insets, native share sheet.
+- **Fit test:** a native modal `<dialog>`, a bottom sheet on phones (focus trap, Escape, Android back).
+- **Fixed on the way:** hidden checkboxes were positioned against the page and could scroll the whole app when focused; a long cable row could push the layout wider than the screen; number pads had no minus key for the fit offsets.
+- The smoke test now fails on anything wider than the screen, any target under 44 px and any field under 16 px.
+- Not verified on real devices: only headless Chromium with touch emulation.
+
+### Languages (2026-11-12)
+
+English and Português (Brasil), chosen automatically from the browser's languages (no picker; `?lang=pt-BR` forces one). No library: typed catalogs, `Intl`, lazy-loaded per language. Details and how to add one: [TRANSLATING.md](TRANSLATING.md).

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { FIELDS, GROUPS, SIMPLE_KEYS, type ParamKey } from '../lib/fields.ts';
   import { app } from '../lib/state.svelte.ts';
+  import { groupText, num, t } from '../i18n/index.svelte.ts';
   import FieldView from './Field.svelte';
   import Issues from './Issues.svelte';
 
@@ -35,8 +36,8 @@
 
 <details class="adv" bind:open={app.showAdvanced}>
   <summary>
-    <span>Advanced settings</span>
-    <small>Exact sizes, hinge, latch, brick fit, printer</small>
+    <span>{t('adv.title')}</span>
+    <small>{t('adv.blurb')}</small>
   </summary>
 
   <div class="body">
@@ -44,17 +45,17 @@
       <Issues issues={(app.result?.issues ?? []).filter((i) => i.level !== 'error')} failures={[]} />
     {/if}
     <section class="card">
-      <h3>Cables</h3>
+      <h3>{t('adv.cables')}</h3>
       <div class="field">
         <div class="row">
-          <label for="room">Extra room around each cable</label>
-          <span class="num"><input id="room" type="number" min="0" max="6" step="0.1" value={app.room}
+          <label for="room">{t('adv.room')}</label>
+          <span class="num"><input id="room" type="number" inputmode="decimal" enterkeyhint="done" min="0" max="6" step="0.1" value={app.room}
             onchange={(e) => { const v = e.currentTarget.valueAsNumber; if (Number.isFinite(v)) app.room = Math.min(6, Math.max(0, v)); }} /> mm</span>
         </div>
-        <input type="range" min="0" max="6" step="0.1" value={app.room} aria-label="Extra room around each cable"
+        <input type="range" min="0" max="6" step="0.1" value={app.room} aria-label={t('adv.room')} style:--fill="{(app.room / 6) * 100}%"
           oninput={(e) => (app.room = e.currentTarget.valueAsNumber)} />
         <p class="help">
-          Channels are {app.params.channelWidths?.map((w) => w.toFixed(1)).join(' / ')} mm wide and {app.params.channelHeight.toFixed(1)} mm tall.
+          {t('adv.channels', { widths: (app.params.channelWidths ?? []).map((w) => num(w, 1, 1)).join(' / '), height: num(app.params.channelHeight, 1, 1) })}
         </p>
       </div>
     </section>
@@ -63,7 +64,7 @@
       {@const gf = fields.filter((f) => f.group === g.id)}
       {#if gf.length}
         <details class="card group" bind:open={open[g.id]}>
-          <summary><h3>{g.title}</h3><small>{g.blurb}</small></summary>
+          <summary><h3>{groupText(g.id).title}</h3><small>{groupText(g.id).blurb}</small></summary>
           {#each gf as f (f.key)}
             <FieldView field={f} value={app.params[f.key]} flagged={flags.get(f.key) ?? null} onchange={(v) => set(f.key, v)} />
           {/each}
@@ -72,32 +73,32 @@
     {/each}
 
     <section class="card">
-      <h3>Preview</h3>
+      <h3>{t('adv.preview')}</h3>
       <div class="field">
-        <div class="row"><label for="open">Open the lid</label><span class="val">{Math.round(app.openAngle)}°</span></div>
-        <input id="open" type="range" min="0" max="170" step="1" bind:value={app.openAngle} />
+        <div class="row"><label for="open">{t('adv.openLid')}</label><span class="val">{Math.round(app.openAngle)}°</span></div>
+        <input id="open" type="range" min="0" max="170" step="1" bind:value={app.openAngle} style:--fill="{(app.openAngle / 170) * 100}%" />
       </div>
       <div class="field">
-        <div class="row"><label for="cut">Cut-away view</label><span class="val">{app.section >= 0.999 ? 'off' : `${Math.round(app.section * 100)}%`}</span></div>
-        <input id="cut" type="range" min="0.02" max="1" step="0.01" bind:value={app.section} />
-        <p class="help">Slice through the clip to see the hinge and latch inside.</p>
+        <div class="row"><label for="cut">{t('adv.cut')}</label><span class="val">{app.section >= 0.999 ? t('adv.cutOff') : `${Math.round(app.section * 100)}%`}</span></div>
+        <input id="cut" type="range" min="0.02" max="1" step="0.01" bind:value={app.section} style:--fill="{((app.section - 0.02) / 0.98) * 100}%" />
+        <p class="help">{t('adv.cutHelp')}</p>
       </div>
     </section>
 
     {#if report}
       <section class="card diag">
-        <h3>Checks</h3>
+        <h3>{t('adv.checks')}</h3>
         <dl>
-          <dt>Two separate parts</dt><dd>{report.baseParts === 1 && report.armParts === 1 ? '✓' : '✕'}</dd>
-          <dt>Parts never touch</dt><dd>{report.overlapVolume < 1e-4 ? '✓' : '✕'}</dd>
-          <dt>Smallest gap</dt><dd>{report.minGap.toFixed(3)} mm</dd>
-          <dt>Plastic volume</dt><dd>{report.volumeCm3.toFixed(2)} cm³</dd>
-          <dt>Build time</dt><dd>{app.result?.ms.toFixed(0)} ms</dd>
+          <dt>{t('checks.twoParts')}</dt><dd>{report.baseParts === 1 && report.armParts === 1 ? '✓' : '✕'}</dd>
+          <dt>{t('checks.noTouch')}</dt><dd>{report.overlapVolume < 1e-4 ? '✓' : '✕'}</dd>
+          <dt>{t('checks.minGap')}</dt><dd>{num(report.minGap, 3, 3)} mm</dd>
+          <dt>{t('checks.volume')}</dt><dd>{num(report.volumeCm3, 2, 2)} cm³</dd>
+          <dt>{t('checks.time')}</dt><dd>{num(app.result?.ms ?? 0, 0)} ms</dd>
         </dl>
       </section>
     {/if}
 
-    <button class="reset" onclick={() => app.reset()}>Reset everything to defaults</button>
+    <button class="reset" onclick={() => app.reset()}>{t('adv.reset')}</button>
   </div>
 </details>
 
@@ -125,13 +126,15 @@
   .field { padding: 8px 12px; }
   .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.88rem; font-weight: 550; }
   .num { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--muted); font-weight: 400; }
-  .num input { width: 4.6em; padding: 4px 6px; text-align: right; font: inherit; font-size: 0.88rem; border: 1px solid var(--line); border-radius: 7px; background: var(--input); color: var(--text); }
+  .num input { width: 4.6em; padding: 4px 6px; text-align: right; font: inherit; font-size: var(--field-font, 0.88rem); border: 1px solid var(--line); border-radius: 7px; background: var(--input); color: var(--text); min-height: calc(var(--tap) - 4px); }
   .val { font-size: 0.82rem; color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 400; }
   input[type='range'] { width: 100%; margin: 8px 0 2px; accent-color: var(--accent); }
   .help { margin: 4px 0 0; font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
   dl { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin: 8px 12px 4px; font-size: 0.82rem; }
   dt { color: var(--muted); }
   dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
-  .reset { align-self: center; border: 0; background: none; color: var(--danger-ink); font: inherit; font-size: 0.85rem; padding: 8px; cursor: pointer; }
-  .reset:hover { text-decoration: underline; }
+  .reset { align-self: center; border: 0; background: none; color: var(--danger-ink); font: inherit; font-size: 0.85rem; padding: 8px; cursor: pointer; min-height: var(--tap); }
+  @media (hover: hover) {
+    .reset:hover { text-decoration: underline; }
+  }
 </style>

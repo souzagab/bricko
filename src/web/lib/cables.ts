@@ -7,14 +7,16 @@ import type { ClipParams } from '../../params/schema.ts';
  */
 export interface CableKind { id: string; label: string; hint: string; d: number }
 
-export const CABLE_KINDS: CableKind[] = [
+/** `label` is the English name; other languages name the same ids in src/web/i18n/locales. */
+export const CABLE_KINDS = [
   { id: 'aux', label: 'Earphones / AUX', hint: 'thin audio cable', d: 3 },
   { id: 'phone', label: 'Phone charger', hint: 'USB-C, Lightning, micro-USB', d: 4 },
   { id: 'laptop', label: 'Laptop charger (USB-C)', hint: 'thicker 60–100 W cable', d: 5 },
   { id: 'ethernet', label: 'Network (Ethernet)', hint: 'Cat 5e / Cat 6', d: 6 },
   { id: 'hdmi', label: 'HDMI / DisplayPort', hint: 'monitor cable', d: 7.5 },
   { id: 'power', label: 'Power cord', hint: 'mains cable', d: 8 },
-];
+] as const satisfies readonly CableKind[];
+export type CableKindId = (typeof CABLE_KINDS)[number]['id'];
 export const KIND_BY_ID = Object.fromEntries(CABLE_KINDS.map((k) => [k.id, k])) as Record<string, CableKind>;
 
 export type Cable = { kind: string; d: number }; // kind is a CABLE_KINDS id or 'custom'
